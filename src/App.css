@@ -1,1 +1,51 @@
 @import "tailwindcss";
+@import "./styles/color.css";
+@import "./styles/typography.css";
+
+@theme inline {
+  --font-sans:
+    "Urbanist Variable", "Urbanist", "Pretendard Variable", "Pretendard",
+    -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+
+  --font-primary: var(--font-primary);
+  --font-urbanist: var(--font-urbanist);
+  --font-pretendard: var(--font-pretendard);
+
+  /* Base Colors */
+  --color-white: var(--color-white);
+  --color-black: var(--color-black);
+
+  /* Green Color Tokens */
+  --color-green-100: var(--color-green-100);
+  --color-green-200: var(--color-green-200);
+  --color-green-300: var(--color-green-300);
+  --color-green-400: var(--color-green-400);
+  --color-green-500: var(--color-green-500);
+  --color-green-600: var(--color-green-600);
+  --color-green-700: var(--color-green-700);
+  --color-green-800: var(--color-green-800);
+  --color-green-900: var(--color-green-900);
+  --color-green-950: var(--color-green-950);
+
+  /* Gray Color Tokens */
+  --color-gray-100: var(--color-gray-100);
+  --color-gray-200: var(--color-gray-200);
+  --color-gray-300: var(--color-gray-300);
+  --color-gray-400: var(--color-gray-400);
+  --color-gray-500: var(--color-gray-500);
+  --color-gray-600: var(--color-gray-600);
+  --color-gray-700: var(--color-gray-700);
+  --color-gray-800: var(--color-gray-800);
+  --color-gray-900: var(--color-gray-900);
+
+  /* Background Color Tokens */
+  --color-ipad-background: var(--color-ipad-background);
+  --color-iphone-background: var(--color-iphone-background);
+}
+
+@layer base {
+  html {
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
+}

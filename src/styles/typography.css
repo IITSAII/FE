@@ -1,0 +1,205 @@
+/* 영문/숫자용 Urbanist */
+@import "@fontsource-variable/urbanist";
+
+/* 한글용 Pretendard */
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+
+:root {
+  /* 폰트 패밀리: Urbanist(영문/숫자) 우선 적용 후 Pretendard(한글) 폴백 */
+  --font-urbanist: "Urbanist Variable", "Urbanist", sans-serif;
+  --font-pretendard: "Pretendard Variable", "Pretendard", sans-serif;
+  --font-primary: var(--font-urbanist), var(--font-pretendard);
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* iPad Typography Tokens */
+  --ipad-heading-1-medium-36-size: 36px;
+  --ipad-heading-1-medium-size: 32px;
+  --ipad-heading-2-medium-size: 28px;
+  --ipad-body-1-light-size: 24px;
+  --ipad-body-2-light-size: 18px;
+
+  /* iPhone Typography Tokens */
+  --iphone-heading-1-semibold-size: 20px;
+  --iphone-heading-1-medium-size: 20px;
+  --iphone-heading-2-medium-size: 16px;
+  --iphone-body-1-light-size: 24px;
+  --iphone-body-1-regular-size: 18px;
+  --iphone-body-1-semibold-size: 14px;
+  --iphone-body-2-light-size: 18px;
+  --iphone-body-2-regular-size: 14px;
+}
+
+/* 기본 body 폰트 패밀리 설정 */
+body {
+  font-family: var(--font-primary);
+}
+
+/* ==========================================================================
+   Tailwind CSS v4 Utility Classes
+   ========================================================================== */
+
+/* 폰트 패밀리 유틸리티 */
+@utility font-primary {
+  font-family: var(--font-primary);
+}
+
+/* --------------------------------------------------------------------------
+   iPad Typography Tokens
+   -------------------------------------------------------------------------- */
+@utility text-ipad-heading-1-medium-36 {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-1-medium-36-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-ipad-heading-1-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-1-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-ipad-heading-2-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-2-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-ipad-body-1-light {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-body-1-light-size);
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-ipad-body-2-light {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-body-2-light-size);
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+/* --------------------------------------------------------------------------
+   iPhone Typography Tokens
+   -------------------------------------------------------------------------- */
+@utility text-iphone-heading-1-semibold {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-heading-1-semibold-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: normal;
+}
+
+@utility text-iphone-heading-1-medium {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-heading-1-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-iphone-heading-2-medium {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-heading-2-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-iphone-body-1-light {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-body-1-light-size);
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-iphone-body-1-regular {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-body-1-regular-size);
+  font-weight: var(--font-weight-regular);
+  line-height: normal;
+}
+
+@utility text-iphone-body-1-semibold {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-body-1-semibold-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: normal;
+}
+
+@utility text-iphone-body-2-light {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-body-2-light-size);
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-iphone-body-2-regular {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-body-2-regular-size);
+  font-weight: var(--font-weight-regular);
+  line-height: normal;
+}
+
+/* --------------------------------------------------------------------------
+   공통 타이포그래피 유틸리티 (Common Token Aliases)
+   -------------------------------------------------------------------------- */
+@utility text-heading-1-semibold {
+  font-family: var(--font-primary);
+  font-size: 20px;
+  font-weight: var(--font-weight-semibold);
+  line-height: normal;
+}
+
+@utility text-heading-1-medium {
+  font-family: var(--font-primary);
+  font-size: 20px;
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-heading-2-medium {
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-body-1-light {
+  font-family: var(--font-primary);
+  font-size: 24px;
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-body-1-regular {
+  font-family: var(--font-primary);
+  font-size: 18px;
+  font-weight: var(--font-weight-regular);
+  line-height: normal;
+}
+
+@utility text-body-1-semibold {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  line-height: normal;
+}
+
+@utility text-body-2-light {
+  font-family: var(--font-primary);
+  font-size: 18px;
+  font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-body-2-regular {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: var(--font-weight-regular);
+  line-height: normal;
+}

@@ -1,0 +1,31 @@
+:root {
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Green */
+  --color-green-100: #dbeede;
+  --color-green-200: #b7dcbc;
+  --color-green-300: #94cb9b;
+  --color-green-400: #70b979;
+  --color-green-500: #4ca858;
+  --color-green-600: #3d8646;
+  --color-green-700: #2e6535;
+  --color-green-800: #1e4323;
+  --color-green-900: #0f2212;
+  --color-green-950: #151c12;
+
+  /* Gray */
+  --color-gray-100: #dcdedc;
+  --color-gray-200: #b9bdb9;
+  --color-gray-300: #969d95;
+  --color-gray-400: #737c72;
+  --color-gray-500: #505b4f;
+  --color-gray-600: #40493f;
+  --color-gray-700: #30372f;
+  --color-gray-800: #202420;
+  --color-gray-900: #101210;
+
+  /* Background */
+  --color-ipad-background: #f9f5ed;
+  --color-iphone-background: #f7f7f7;
+}
