@@ -21,8 +21,10 @@
   --ipad-heading-1-medium-size: 36px;
   --ipad-heading-2-medium-size: 32px;
   --ipad-heading-3-medium-size: 28px;
+  --ipad-heading-4-medium-size: 24px;
   --ipad-body-1-light-size: 24px;
   --ipad-body-2-light-size: 18px;
+  --ipad-body-3-medium-size: 12px;
 
   /* iPhone Typography Tokens */
   --iphone-heading-1-semibold-size: 20px;
@@ -80,6 +82,13 @@ body {
   line-height: normal;
 }
 
+@utility text-ipad-heading-4-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-4-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: 140%;
+}
+
 @utility text-ipad-body-1-light {
   font-family: var(--font-primary);
   font-size: var(--ipad-body-1-light-size);
@@ -91,6 +100,13 @@ body {
   font-family: var(--font-primary);
   font-size: var(--ipad-body-2-light-size);
   font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-ipad-body-3-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-body-3-medium-size);
+  font-weight: var(--font-weight-medium);
   line-height: normal;
 }
 
