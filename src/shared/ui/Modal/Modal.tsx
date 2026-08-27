@@ -37,10 +37,13 @@ export function Modal({
   className,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // 모달 오픈 시 배경 스크롤을 방지하고 스크롤바 감추기로 인한 레이아웃 밀림 방지
+  // 모달 오픈 시 배경 스크롤 방지, 포커스 캡처 및 트랩 관리
   useEffect(() => {
     if (!isOpen) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
 
     const originalOverflow = document.body.style.overflow;
     const originalPaddingRight = document.body.style.paddingRight;
@@ -52,18 +55,72 @@ export function Modal({
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
 
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const animationFrameId = requestAnimationFrame(() => {
+      if (modalRef.current) {
+        const focusableElements =
+          modalRef.current.querySelectorAll<HTMLElement>(focusableSelector);
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        } else {
+          modalRef.current.focus();
+        }
+      }
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+        );
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          modalRef.current.focus();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            document.activeElement === modalRef.current
+          ) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      cancelAnimationFrame(animationFrameId);
       document.body.style.overflow = originalOverflow;
       document.body.style.paddingRight = originalPaddingRight;
       window.removeEventListener("keydown", handleKeyDown);
+
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
+        previousFocusRef.current.focus();
+      }
     };
   }, [isOpen, onClose]);
 
@@ -100,8 +157,9 @@ export function Modal({
     >
       <div
         ref={modalRef}
+        tabIndex={-1}
         className={cn(
-          "bg-white rounded-[20px] px-6 py-7 w-full max-w-88 max-h-[calc(100vh-2rem)] flex flex-col items-center relative animate-in fade-in zoom-in-95 duration-200",
+          "bg-white rounded-[20px] px-6 py-7 w-full max-w-88 max-h-[calc(100vh-2rem)] flex flex-col items-center relative animate-in fade-in zoom-in-95 duration-200 focus:outline-none",
           className,
         )}
       >
