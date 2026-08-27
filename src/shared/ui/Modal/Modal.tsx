@@ -89,6 +89,11 @@ export function Modal({
   const [instanceId] = useState(() => Symbol("ModalInstance"));
   const titleId = useId();
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   // 모달 오픈 시 배경 스크롤 방지, 포커스 캡처 및 트랩 관리 (공유 모달 스택 기반)
   useEffect(() => {
     if (!isOpen) return;
@@ -117,7 +122,7 @@ export function Modal({
       if (!isTopmostModal(stackItem)) return;
 
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -168,13 +173,13 @@ export function Modal({
         previousFocusRef.current.focus();
       }
     };
-  }, [isOpen, onClose, instanceId]);
+  }, [isOpen, instanceId]);
 
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget && closeOnBackdropClick) {
-      onClose();
+      onCloseRef.current();
     }
   };
 
@@ -182,7 +187,7 @@ export function Modal({
     if (onCancel) {
       onCancel();
     } else {
-      onClose();
+      onCloseRef.current();
     }
   };
 
@@ -190,7 +195,7 @@ export function Modal({
     if (onConfirm) {
       onConfirm();
     } else {
-      onClose();
+      onCloseRef.current();
     }
   };
 

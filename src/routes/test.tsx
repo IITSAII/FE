@@ -43,6 +43,11 @@ function SharedUITestPage() {
   const noticeModal = useModal();
   const customBodyModal = useModal();
 
+  // 중첩 모달 인라인 onClose 재렌더링 회귀 테스트 상태
+  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
+  const [isChildModalOpen, setIsChildModalOpen] = useState(false);
+  const [parentRerenderCount, setParentRerenderCount] = useState(0);
+
   return (
     <div className="min-h-screen bg-iphone-background p-6 md:p-12 font-primary text-gray-900">
       <div className="max-w-4xl mx-auto space-y-14">
@@ -489,6 +494,13 @@ function SharedUITestPage() {
             <Button variant="darkGreen" size="inline" onClick={customBodyModal.openModal}>
               3) Custom Body 모달 열기
             </Button>
+            <Button
+              variant="gray"
+              size="inline"
+              onClick={() => setIsParentModalOpen(true)}
+            >
+              4) 중첩 모달 인라인 onClose 회귀 테스트
+            </Button>
           </div>
 
           {/* 모달 1: 기본 Confirm / Cancel 모달 */}
@@ -532,6 +544,41 @@ function SharedUITestPage() {
               </p>
             </div>
           </Modal>
+
+          {/* 모달 4 & 5: 중첩 모달 인라인 onClose 재렌더링 회귀 테스트 */}
+          <Modal
+            isOpen={isParentModalOpen}
+            onClose={() => setIsParentModalOpen(false)}
+            title={`부모 모달 (재렌더링 횟수: ${parentRerenderCount})`}
+            description="인라인 onClose 콜백을 가진 부모 모달입니다. 아래 버튼으로 자식 모달을 띄운 뒤 부모를 재렌더링해도 자식 모달의 최상단 스택 순서가 유지됩니다."
+            cancelText="부모 닫기"
+          >
+            <div className="flex flex-col items-center gap-2 w-full pt-2">
+              <Button
+                variant="primary"
+                size="block"
+                onClick={() => setParentRerenderCount((prev) => prev + 1)}
+              >
+                부모 모달 강제 재렌더링 (+1)
+              </Button>
+              <Button
+                variant="darkGreen"
+                size="block"
+                onClick={() => setIsChildModalOpen(true)}
+              >
+                자식 중첩 모달 열기
+              </Button>
+            </div>
+          </Modal>
+
+          <Modal
+            isOpen={isChildModalOpen}
+            onClose={() => setIsChildModalOpen(false)}
+            title="자식 중첩 모달 (Topmost)"
+            description="인라인 onClose 콜백을 가진 자식 모달입니다. 부모 모달이 재렌더링되어도 자식 모달이 최상위(Topmost) 상태를 유지하여 Escape 키 입력 시 자식 모달만 닫힙니다."
+            confirmText="자식 닫기"
+            onConfirm={() => setIsChildModalOpen(false)}
+          />
         </section>
       </div>
     </div>
