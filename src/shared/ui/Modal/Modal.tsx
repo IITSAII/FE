@@ -1,8 +1,54 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../Button/Button";
 import ExclamationIcon from "../../assets/icons/ExclamationIcon.svg?react";
 import { cn } from "../../lib/utils";
+
+interface ModalStackItem {
+  id: symbol;
+}
+
+const modalStack: ModalStackItem[] = [];
+let originalBodyOverflow: string | null = null;
+let originalBodyPaddingRight: string | null = null;
+
+function pushModalStack(item: ModalStackItem) {
+  if (modalStack.length === 0) {
+    originalBodyOverflow = document.body.style.overflow;
+    originalBodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+  }
+  modalStack.push(item);
+}
+
+function popModalStack(item: ModalStackItem): boolean {
+  const index = modalStack.findIndex((i) => i.id === item.id);
+  const isTopmost = index !== -1 && index === modalStack.length - 1;
+  if (index !== -1) {
+    modalStack.splice(index, 1);
+  }
+  if (modalStack.length === 0) {
+    if (originalBodyOverflow !== null) {
+      document.body.style.overflow = originalBodyOverflow;
+      originalBodyOverflow = null;
+    }
+    if (originalBodyPaddingRight !== null) {
+      document.body.style.paddingRight = originalBodyPaddingRight;
+      originalBodyPaddingRight = null;
+    }
+  }
+  return isTopmost;
+}
+
+function isTopmostModal(item: ModalStackItem): boolean {
+  return modalStack.length > 0 && modalStack[modalStack.length - 1].id === item.id;
+}
 
 export interface ModalProps {
   isOpen: boolean;
@@ -17,6 +63,7 @@ export interface ModalProps {
   closeOnBackdropClick?: boolean;
   children?: React.ReactNode;
   className?: string;
+  ariaLabel?: string;
 }
 
 /**
@@ -35,31 +82,27 @@ export function Modal({
   closeOnBackdropClick = true,
   children,
   className,
+  ariaLabel,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const [instanceId] = useState(() => Symbol("ModalInstance"));
+  const titleId = useId();
 
-  // 모달 오픈 시 배경 스크롤 방지, 포커스 캡처 및 트랩 관리
+  // 모달 오픈 시 배경 스크롤 방지, 포커스 캡처 및 트랩 관리 (공유 모달 스택 기반)
   useEffect(() => {
     if (!isOpen) return;
 
+    const stackItem: ModalStackItem = { id: instanceId };
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-    const originalOverflow = document.body.style.overflow;
-    const originalPaddingRight = document.body.style.paddingRight;
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
-
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
+    pushModalStack(stackItem);
 
     const focusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
     const animationFrameId = requestAnimationFrame(() => {
-      if (modalRef.current) {
+      if (modalRef.current && isTopmostModal(stackItem)) {
         const focusableElements =
           modalRef.current.querySelectorAll<HTMLElement>(focusableSelector);
         if (focusableElements.length > 0) {
@@ -71,6 +114,8 @@ export function Modal({
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isTopmostModal(stackItem)) return;
+
       if (e.key === "Escape") {
         onClose();
         return;
@@ -111,18 +156,19 @@ export function Modal({
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      document.body.style.overflow = originalOverflow;
-      document.body.style.paddingRight = originalPaddingRight;
       window.removeEventListener("keydown", handleKeyDown);
 
+      const wasTopmost = popModalStack(stackItem);
+
       if (
+        wasTopmost &&
         previousFocusRef.current &&
         typeof previousFocusRef.current.focus === "function"
       ) {
         previousFocusRef.current.focus();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, instanceId]);
 
   if (!isOpen) return null;
 
@@ -154,6 +200,8 @@ export function Modal({
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={title ? titleId : undefined}
+      aria-label={!title ? ariaLabel : undefined}
     >
       <div
         ref={modalRef}
@@ -173,7 +221,10 @@ export function Modal({
             )}
 
             {title && (
-              <h2 className="text-iphone-heading-1-semibold text-black whitespace-pre-line text-center">
+              <h2
+                id={titleId}
+                className="text-iphone-heading-1-semibold text-black whitespace-pre-line text-center"
+              >
                 {title}
               </h2>
             )}
