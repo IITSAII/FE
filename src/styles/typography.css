@@ -29,6 +29,7 @@
   /* iPhone Typography Tokens */
   --iphone-heading-1-semibold-size: 20px;
   --iphone-heading-1-medium-size: 20px;
+  --iphone-heading-1-regular-size: 16px;
   --iphone-heading-2-medium-size: 16px;
   --iphone-body-1-light-size: 24px;
   --iphone-body-1-regular-size: 18px;
@@ -124,6 +125,13 @@ body {
   font-family: var(--font-primary);
   font-size: var(--iphone-heading-1-medium-size);
   font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-iphone-heading-1-regular {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-heading-1-regular-size);
+  font-weight: var(--font-weight-regular);
   line-height: normal;
 }
 
