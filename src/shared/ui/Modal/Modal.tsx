@@ -36,23 +36,46 @@ export function Modal({
   children,
   className,
 }: ModalProps) {
-  // ESC 키 이벤트 감지 및 스크롤 방지
+  // ESC 키 처리 및 스크롤 방지 (body overflow를 변경하지 않아 스크롤바 유지 및 밀림 방지)
   useEffect(() => {
     if (!isOpen) return;
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
+        return;
+      }
+      // 방향키, 스페이스바 등의 스크롤 키 차단
+      if (
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "PageUp",
+          "PageDown",
+          "Home",
+          "End",
+          " ",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
       }
     };
 
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
