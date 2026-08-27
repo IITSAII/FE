@@ -17,15 +17,19 @@
   --font-weight-semibold: 600;
 
   /* iPad Typography Tokens */
-  --ipad-heading-1-medium-36-size: 36px;
-  --ipad-heading-1-medium-size: 32px;
-  --ipad-heading-2-medium-size: 28px;
+  --ipad-heading-0-medium-size: 48px;
+  --ipad-heading-1-medium-size: 36px;
+  --ipad-heading-2-medium-size: 32px;
+  --ipad-heading-3-medium-size: 28px;
+  --ipad-heading-4-medium-size: 24px;
   --ipad-body-1-light-size: 24px;
   --ipad-body-2-light-size: 18px;
+  --ipad-body-3-medium-size: 12px;
 
   /* iPhone Typography Tokens */
   --iphone-heading-1-semibold-size: 20px;
   --iphone-heading-1-medium-size: 20px;
+  --iphone-heading-1-regular-size: 16px;
   --iphone-heading-2-medium-size: 16px;
   --iphone-body-1-light-size: 24px;
   --iphone-body-1-regular-size: 18px;
@@ -51,9 +55,9 @@ body {
 /* --------------------------------------------------------------------------
    iPad Typography Tokens
    -------------------------------------------------------------------------- */
-@utility text-ipad-heading-1-medium-36 {
+@utility text-ipad-heading-0-medium {
   font-family: var(--font-primary);
-  font-size: var(--ipad-heading-1-medium-36-size);
+  font-size: var(--ipad-heading-0-medium-size);
   font-weight: var(--font-weight-medium);
   line-height: normal;
 }
@@ -72,6 +76,20 @@ body {
   line-height: normal;
 }
 
+@utility text-ipad-heading-3-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-3-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-ipad-heading-4-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-heading-4-medium-size);
+  font-weight: var(--font-weight-medium);
+  line-height: 140%;
+}
+
 @utility text-ipad-body-1-light {
   font-family: var(--font-primary);
   font-size: var(--ipad-body-1-light-size);
@@ -83,6 +101,13 @@ body {
   font-family: var(--font-primary);
   font-size: var(--ipad-body-2-light-size);
   font-weight: var(--font-weight-light);
+  line-height: normal;
+}
+
+@utility text-ipad-body-3-medium {
+  font-family: var(--font-primary);
+  font-size: var(--ipad-body-3-medium-size);
+  font-weight: var(--font-weight-medium);
   line-height: normal;
 }
 
@@ -100,6 +125,13 @@ body {
   font-family: var(--font-primary);
   font-size: var(--iphone-heading-1-medium-size);
   font-weight: var(--font-weight-medium);
+  line-height: normal;
+}
+
+@utility text-iphone-heading-1-regular {
+  font-family: var(--font-primary);
+  font-size: var(--iphone-heading-1-regular-size);
+  font-weight: var(--font-weight-regular);
   line-height: normal;
 }
 
