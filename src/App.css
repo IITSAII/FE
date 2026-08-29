@@ -11,6 +11,7 @@
   --font-primary: var(--font-primary);
   --font-urbanist: var(--font-urbanist);
   --font-pretendard: var(--font-pretendard);
+  --font-poppins: var(--font-poppins);
 
   /* Base Colors */
   --color-white: var(--color-white);
@@ -42,6 +43,10 @@
   /* Background Color Tokens */
   --color-ipad-background: var(--color-ipad-background);
   --color-iphone-background: var(--color-iphone-background);
+
+  /* Photo Frame Color Tokens */
+  --color-frame-dark: var(--color-frame-dark);
+  --color-frame-light: var(--color-frame-light);
 }
 
 @layer base {

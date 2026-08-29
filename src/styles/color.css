@@ -28,4 +28,8 @@
   /* Background */
   --color-ipad-background: #f9f5ed;
   --color-iphone-background: #f7f7f7;
+
+  /* Photo Frame */
+  --color-frame-dark: #403e37;
+  --color-frame-light: #f9f5ed;
 }
