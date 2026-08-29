@@ -9,6 +9,7 @@ import { CategoryTab } from "../shared/ui/CategoryTabs/CategoryTab";
 import { IconButton } from "../shared/ui/IconButton/IconButton";
 import { Modal } from "../shared/ui/Modal/Modal";
 import { PhotoFrame } from "../shared/ui/PhotoFrame/PhotoFrame";
+import { SmallPhotoFrame } from "../shared/ui/PhotoFrame/SmallPhotoFrame";
 import { useModal } from "../shared/hooks/useModal";
 import PlusIcon from "../shared/assets/icons/PlusIcon.svg?react";
 import MinusIcon from "../shared/assets/icons/MinusIcon.svg?react";
@@ -651,6 +652,81 @@ function SharedUITestPage() {
               </div>
               <div className="flex flex-col items-center gap-2">
                 <PhotoFrame variant="light" theme="banjjak" />
+                <span className="text-xs text-gray-500 font-medium">Light Variant</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. SmallPhotoFrame (소형 사진 프레임 컴포넌트: 모든 테마 & 변형) */}
+        <section className="bg-white p-6 rounded-xl border border-gray-200 space-y-6">
+          <h2 className="text-heading-1-semibold text-gray-900 border-b border-gray-100 pb-2">
+            7. SmallPhotoFrame (소형 사진 프레임 컴포넌트: 모든 테마 & 변형)
+          </h2>
+
+          {/* 피치못한 테마 */}
+          <div className="space-y-3">
+            <h3 className="text-iphone-heading-2-medium text-gray-700">
+              1) 피치못한 테마 (`pichimothan` - Dark vs Light)
+            </h3>
+            <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="dark" theme="pichimothan" />
+                <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="light" theme="pichimothan" />
+                <span className="text-xs text-gray-500 font-medium">Light Variant</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 마주하다 테마 */}
+          <div className="space-y-3">
+            <h3 className="text-iphone-heading-2-medium text-gray-700">
+              2) 마주하다 테마 (`majuhada` - Dark vs Light)
+            </h3>
+            <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="dark" theme="majuhada" />
+                <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="light" theme="majuhada" />
+                <span className="text-xs text-gray-500 font-medium">Light Variant</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 오버눅 테마 */}
+          <div className="space-y-3">
+            <h3 className="text-iphone-heading-2-medium text-gray-700">
+              3) 오버눅 테마 (`overnook` - Dark vs Light)
+            </h3>
+            <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="dark" theme="overnook" />
+                <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="light" theme="overnook" />
+                <span className="text-xs text-gray-500 font-medium">Light Variant</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 반짝 테마 */}
+          <div className="space-y-3">
+            <h3 className="text-iphone-heading-2-medium text-gray-700">
+              4) 반짝 테마 (`banjjak` - Dark vs Light)
+            </h3>
+            <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="dark" theme="banjjak" />
+                <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <SmallPhotoFrame variant="light" theme="banjjak" />
                 <span className="text-xs text-gray-500 font-medium">Light Variant</span>
               </div>
             </div>
