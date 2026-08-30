@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
-@import "./styles/color.css";
-@import "./styles/typography.css";
+@import "../styles/color.css";
+@import "../styles/typography.css";
 
 @theme inline {
   --font-sans:
