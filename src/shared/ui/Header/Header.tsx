@@ -1,5 +1,6 @@
-import { useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import Logo from "../../assets/icons/Logo/Logo.svg?react";
+import ImageIcon from "../../assets/icons/ImageIcon.svg?react";
 
 const Header = () => {
   const location = useLocation();
@@ -15,6 +16,11 @@ const Header = () => {
         }`}
       >
         <Logo className="w-[59.21px] h-6 text-green-500" />
+        {isMobileRoute && (
+          <Link to="/snap" aria-label="사진 촬영 시작하기" className="text-gray-900">
+            <ImageIcon className="w-6 h-6" />
+          </Link>
+        )}
       </div>
     </header>
   );
