@@ -25,7 +25,7 @@ export function Card({
     <div
       className={cn(
         "relative w-full bg-white border border-gray-200 rounded-[4px] p-6 transition-all",
-        isDisabled && "opacity-40 pointer-events-none",
+        isDisabled && "opacity-40",
         className,
       )}
       {...props}

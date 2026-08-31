@@ -26,7 +26,7 @@ export function MissionCard({
     <Card
       isSelected={isSelected}
       isDisabled={isDisabled}
-      className={cn("w-full max-w-171", className)}
+      className={cn("w-full", className)}
       {...props}
     >
       <div className="flex flex-col items-center gap-3 text-center w-full">

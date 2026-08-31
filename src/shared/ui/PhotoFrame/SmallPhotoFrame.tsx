@@ -16,6 +16,8 @@ export type SmallPhotoFrameTheme =
   | "overnook"
   | "banjjak";
 
+export type SmallPhotoFilter = "default" | "grayscale";
+
 export interface SmallPhotoFrameProps extends React.HTMLAttributes<HTMLDivElement> {
   /** 프레임 색상 테마 ("dark" = 다크 그린/블랙, "light" = 아이보리/크림) */
   variant?: SmallPhotoFrameVariant;
@@ -29,6 +31,8 @@ export interface SmallPhotoFrameProps extends React.HTMLAttributes<HTMLDivElemen
   date?: string;
   /** QR 코드 이미지 URL (선택) */
   qrCodeUrl?: string;
+  /** 사진 필터 ("default" | "grayscale") */
+  filter?: SmallPhotoFilter;
   /** 추가 커스텀 스타일 클래스 */
   className?: string;
 }
@@ -43,6 +47,7 @@ export function SmallPhotoFrame({
   relationship = "Friend",
   date = "2026.05.16",
   qrCodeUrl,
+  filter = "default",
   className,
   ...props
 }: SmallPhotoFrameProps) {
@@ -102,7 +107,10 @@ export function SmallPhotoFrame({
                 <img
                   src={photoUrl}
                   alt={`Photo ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  className={cn(
+                    "w-full h-full object-cover",
+                    filter === "grayscale" && "grayscale",
+                  )}
                 />
               )}
             </div>
