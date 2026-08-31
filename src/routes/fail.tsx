@@ -14,35 +14,7 @@ function FailPage() {
   const message = searchParams.get("message");
 
   const handleRetry = () => {
-    // orderId로 sessionStorage에서 저장된 주문 정보 복원
-    const orderId = searchParams.get("orderId");
-    let restoredTotalPrice: number | undefined;
-    let restoredPersonnelCount: number | undefined;
-
-    if (orderId) {
-      try {
-        const stored = sessionStorage.getItem(`pending_order_${orderId}`);
-        if (stored) {
-          const parsed = JSON.parse(stored) as {
-            totalPrice: number;
-            personnelCount: number;
-          };
-          restoredTotalPrice = parsed.totalPrice;
-          restoredPersonnelCount = parsed.personnelCount;
-        }
-      } catch {
-        // sessionStorage 파싱 실패 시 무시
-      }
-    }
-
-    navigate({
-      to: "/snap",
-      search: { step: "payment" } as any,
-      state: {
-        restoredTotalPrice,
-        restoredPersonnelCount,
-      } as any,
-    });
+    navigate({ to: "/snap", search: { step: "quantity" } as any });
   };
 
   return (
@@ -73,7 +45,7 @@ function FailPage() {
           onClick={handleRetry}
           className="w-full py-3.5 rounded-xl font-bold text-base mt-2"
         >
-          결제 다시 시도하기
+          다시 수량 선택하기
         </Button>
       </div>
     </div>
