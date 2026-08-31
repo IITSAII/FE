@@ -103,6 +103,8 @@ function SnapFlowPage() {
   };
 
   const handleResetFlow = () => {
+    sessionStorage.removeItem("payment_session_id");
+    sessionStorage.removeItem("payment_confirmed_session_id");
     setQuantityData(null);
     setRelationData(null);
     setPhotoData(null);
