@@ -7,6 +7,8 @@ import {
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { Button } from "../../../shared/ui/Button/Button";
 import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
+import { isApiError } from "../../../shared/lib/apiError";
+import { createSession } from "../api/paymentApi";
 
 export interface PaymentStepProps {
   totalPrice?: number;
@@ -31,6 +33,7 @@ export function PaymentStep({
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
     async function initTossWidget() {
       setErrorMessage(null);
@@ -47,24 +50,10 @@ export function PaymentStep({
       try {
         setIsLoading(true);
 
-        const sessionResponse = await fetch("/api/sessions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ quantity: personnelCount }),
-        });
+        const session = await createSession(personnelCount, controller.signal);
 
-        const sessionData = await sessionResponse.json().catch(() => ({}));
-
-        if (!sessionResponse.ok) {
-          throw new Error(
-            sessionData.message || "결제 세션 생성에 실패했습니다.",
-          );
-        }
-
-        const nextSessionId = sessionData.sessionId;
-        const nextAmount = Number(sessionData.amount ?? totalPrice);
+        const nextSessionId = session.sessionId;
+        const nextAmount = Number(session.amount ?? totalPrice);
 
         if (!nextSessionId || !Number.isFinite(nextAmount) || nextAmount <= 0) {
           throw new Error("결제 금액 정보를 받을 수 없습니다.");
@@ -102,6 +91,9 @@ export function PaymentStep({
           setIsLoading(false);
         }
       } catch (err) {
+        // 언마운트로 인한 요청 취소는 사용자에게 노출하지 않는다.
+        if (isApiError(err) && err.code === "CANCELED") return;
+
         console.error("Failed to initialize Toss Payments widget:", err);
         if (isMounted) {
           setErrorMessage(
@@ -118,6 +110,7 @@ export function PaymentStep({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [clientKey, personnelCount, totalPrice]);
 
