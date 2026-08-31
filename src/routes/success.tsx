@@ -12,7 +12,7 @@ function SuccessPage() {
     typeof window !== "undefined" ? window.location.search : "",
   );
   const paymentKey = searchParams.get("paymentKey");
-  const orderId = searchParams.get("orderId");
+  const sessionId = searchParams.get("orderId");
   const amount = searchParams.get("amount");
 
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -22,24 +22,26 @@ function SuccessPage() {
 
   useEffect(() => {
     async function confirmPayment() {
-      if (!paymentKey || !orderId || !amount) {
+      if (!paymentKey || !sessionId || !amount) {
         setErrorMessage("결제 정보가 올바르지 않습니다.");
         setStatus("error");
         return;
       }
 
       try {
-        const response = await fetch("/confirm", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `/api/sessions/${sessionId}/payment/confirm`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              paymentKey,
+              amount,
+            }),
           },
-          body: JSON.stringify({
-            paymentKey,
-            orderId,
-            amount,
-          }),
-        });
+        );
 
         const json = await response.json().catch(() => ({}));
 
@@ -59,14 +61,20 @@ function SuccessPage() {
     }
 
     confirmPayment();
-  }, [paymentKey, orderId, amount]);
+  }, [paymentKey, sessionId, amount]);
 
   const handleNextStep = () => {
     navigate({ to: "/snap", search: { step: "relation" } as any });
   };
 
   const handleRetry = () => {
-    navigate({ to: "/fail", search: { code: "CONFIRM_ERROR", message: errorMessage ?? undefined } as any });
+    navigate({
+      to: "/fail",
+      search: {
+        code: "CONFIRM_ERROR",
+        message: errorMessage ?? undefined,
+      } as any,
+    });
   };
 
   return (
@@ -75,14 +83,18 @@ function SuccessPage() {
         {status === "loading" ? (
           <div className="py-12 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-600 font-medium">결제 승인 처리 중입니다...</p>
+            <p className="text-gray-600 font-medium">
+              결제 승인 처리 중입니다...
+            </p>
           </div>
         ) : status === "error" ? (
           <>
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 text-3xl font-bold">
               ✕
             </div>
-            <h2 className="text-2xl font-bold text-black">결제 승인에 실패하였습니다</h2>
+            <h2 className="text-2xl font-bold text-black">
+              결제 승인에 실패하였습니다
+            </h2>
             {errorMessage && (
               <p className="text-red-500 text-sm">{errorMessage}</p>
             )}
@@ -107,7 +119,7 @@ function SuccessPage() {
               <div className="flex justify-between border-b border-gray-200 pb-2">
                 <span className="text-gray-500">주문번호</span>
                 <span className="font-semibold text-gray-800">
-                  {orderId || "-"}
+                  {sessionId || "-"}
                 </span>
               </div>
               <div className="flex justify-between border-b border-gray-200 pb-2">

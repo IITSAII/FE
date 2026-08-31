@@ -23,28 +23,67 @@ export function PaymentStep({
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [serverAmount, setServerAmount] = useState<number | null>(null);
 
-  const clientKey =
-    (import.meta.env.TOSS_CLIENT_KEY as string | undefined) ||
-    (import.meta.env.VITE_TOSS_CLIENT_KEY as string | undefined) ||
-    "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+  const clientKey = import.meta.env.TOSS_CLIENT_KEY as string | undefined;
+  const resolvedAmount = serverAmount ?? totalPrice;
 
   useEffect(() => {
     let isMounted = true;
 
     async function initTossWidget() {
+      setErrorMessage(null);
+
+      if (!clientKey) {
+        if (!isMounted) return;
+        setErrorMessage(
+          "결제 환경변수가 설정되지 않았습니다. 관리자에게 문의해주세요.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        const tossPayments = await loadTossPayments(clientKey);
+
+        const sessionResponse = await fetch("/api/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ quantity: personnelCount }),
+        });
+
+        const sessionData = await sessionResponse.json().catch(() => ({}));
+
+        if (!sessionResponse.ok) {
+          throw new Error(
+            sessionData.message || "결제 세션 생성에 실패했습니다.",
+          );
+        }
+
+        const nextSessionId = sessionData.sessionId;
+        const nextAmount = Number(sessionData.amount ?? totalPrice);
+
+        if (!nextSessionId || !Number.isFinite(nextAmount) || nextAmount <= 0) {
+          throw new Error("결제 금액 정보를 받을 수 없습니다.");
+        }
+
         if (!isMounted) return;
 
+        setSessionId(nextSessionId);
+        sessionStorage.setItem("payment_session_id", nextSessionId);
+        setServerAmount(nextAmount);
+
+        const tossPayments = await loadTossPayments(clientKey);
         const widgetsInstance = tossPayments.widgets({
           customerKey: ANONYMOUS,
         });
 
         await widgetsInstance.setAmount({
           currency: "KRW",
-          value: totalPrice,
+          value: nextAmount,
         });
 
         await Promise.all([
@@ -65,7 +104,11 @@ export function PaymentStep({
       } catch (err) {
         console.error("Failed to initialize Toss Payments widget:", err);
         if (isMounted) {
-          setErrorMessage("결제 위젯을 불러오는 중 오류가 발생했습니다.");
+          setErrorMessage(
+            err instanceof Error
+              ? err.message
+              : "결제 위젯을 불러오는 중 오류가 발생했습니다.",
+          );
           setIsLoading(false);
         }
       }
@@ -76,47 +119,37 @@ export function PaymentStep({
     return () => {
       isMounted = false;
     };
-  }, [clientKey, totalPrice]);
+  }, [clientKey, personnelCount, totalPrice]);
 
   const handlePayment = async () => {
-    if (!widgets) return;
-
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    // orderId를 키로 주문 정보를 sessionStorage에 보존 (fail 페이지 retry 복원용)
-    sessionStorage.setItem(
-      `pending_order_${orderId}`,
-      JSON.stringify({ totalPrice, personnelCount }),
-    );
+    if (!widgets || !sessionId || serverAmount == null) return;
 
     try {
       await widgets.requestPayment({
-        orderId,
+        orderId: sessionId,
         orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`,
       });
     } catch (err) {
       console.error("Payment request failed:", err);
+      setErrorMessage("결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
-      {/* 메인 프레임 영역 (최대 너비 834px 대응) */}
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
-        {/* 타이틀 영역 */}
         <div className="w-full pt-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             결제를 진행해주세요 !
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
             선택한 수량({personnelCount}인) 및 금액(
-            {totalPrice.toLocaleString()}원) 확인 후 결제해주세요.
+            {resolvedAmount.toLocaleString()}원) 확인 후 결제해주세요.
           </p>
         </div>
 
-        {/* 결제 정보 및 위젯 영역 */}
         <div className="w-full flex flex-col gap-6 my-auto max-w-[600px] mx-auto bg-white p-6 rounded-2xl shadow-sm">
           <div className="flex justify-between items-center pb-4 border-b border-gray-100">
             <span className="text-gray-600 text-ipad-body-1-light">
@@ -131,13 +164,11 @@ export function PaymentStep({
               총 결제 금액
             </span>
             <span className="text-xl font-bold text-green-500">
-              {totalPrice.toLocaleString()}원
+              {resolvedAmount.toLocaleString()}원
             </span>
           </div>
 
-          {/* 결제 UI 영역 */}
           <div id="payment-method" className="w-full"></div>
-          {/* 이용약관 UI 영역 */}
           <div id="agreement" className="w-full"></div>
 
           {errorMessage && (
@@ -147,7 +178,6 @@ export function PaymentStep({
           )}
         </div>
 
-        {/* 하단 네비게이션 버튼 (뒤로가기 & 결제하기 버튼) */}
         <div className="w-full flex items-center justify-between pt-10">
           <IconButton
             variant="outline"
@@ -161,12 +191,12 @@ export function PaymentStep({
             variant="primary"
             size="inline"
             onClick={handlePayment}
-            disabled={isLoading || !widgets}
+            disabled={isLoading || !widgets || !sessionId}
             className="rounded-full py-5"
           >
             {isLoading
               ? "위젯 로딩 중..."
-              : `${totalPrice.toLocaleString()}원 결제하기`}
+              : `${resolvedAmount.toLocaleString()}원 결제하기`}
           </Button>
 
           <div />
