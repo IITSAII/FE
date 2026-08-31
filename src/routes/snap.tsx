@@ -38,12 +38,40 @@ function SnapFlowPage() {
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
       : null;
-  const initialStep = (searchParams?.get("step") as FlowStep) || "quantity";
+  const requestedStep = (searchParams?.get("step") as FlowStep) || "quantity";
+
+  // history.state에서 fail 페이지 retry 시 복원된 주문 정보 읽기
+  const navState =
+    typeof window !== "undefined"
+      ? (window.history.state as {
+          restoredTotalPrice?: number;
+          restoredPersonnelCount?: number;
+        } | null)
+      : null;
+
+  const [quantityData, setQuantityData] = useState<QuantityStepData | null>(
+    navState?.restoredTotalPrice != null &&
+      navState?.restoredPersonnelCount != null
+      ? {
+          totalPrice: navState.restoredTotalPrice,
+          personnelCount: navState.restoredPersonnelCount,
+        }
+      : null,
+  );
+
+  // payment 이후 단계는 quantityData(결제 완료 증거)가 있어야 접근 허용
+  const postPaymentSteps: FlowStep[] = [
+    "relation",
+    "photo",
+    "select-photo",
+    "frame",
+    "loading",
+  ];
+  const isPostPaymentStep = postPaymentSteps.includes(requestedStep);
+  const initialStep: FlowStep =
+    isPostPaymentStep && quantityData == null ? "quantity" : requestedStep;
 
   const [currentStep, setCurrentStep] = useState<FlowStep>(initialStep);
-  const [quantityData, setQuantityData] = useState<QuantityStepData | null>(
-    null,
-  );
   const [relationData, setRelationData] = useState<RelationStepData | null>(
     null,
   );
