@@ -3,9 +3,11 @@ import { defineConfig } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
+import svgr from "vite-plugin-svgr";
 
 // https://vite.dev/config/
 export default defineConfig({
+  envPrefix: ["VITE_", "TOSS_"],
   plugins: [
     tanstackRouter({
       routesDirectory: "./src/routes", // 라우트 파일 위치
@@ -15,6 +17,7 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    svgr(),
     babel({ presets: [reactCompilerPreset()] }),
   ],
 });
