@@ -23,7 +23,8 @@ function SuccessPage() {
   useEffect(() => {
     async function confirmPayment() {
       if (!paymentKey || !orderId || !amount) {
-        setStatus("success");
+        setErrorMessage("결제 정보가 올바르지 않습니다.");
+        setStatus("error");
         return;
       }
 
@@ -51,12 +52,9 @@ function SuccessPage() {
 
         setStatus("success");
       } catch (err) {
-        console.warn(
-          "Payment confirm endpoint call error (dev fallback):",
-          err,
-        );
-        // 클라이언트 심사/테스트 환경을 위해 승인 API 호출 실패시에도 성공 모드 유지
-        setStatus("success");
+        console.warn("Payment confirm endpoint call error:", err);
+        setErrorMessage("결제 승인 요청 중 네트워크 오류가 발생했습니다.");
+        setStatus("error");
       }
     }
 
@@ -67,6 +65,10 @@ function SuccessPage() {
     navigate({ to: "/snap", search: { step: "relation" } as any });
   };
 
+  const handleRetry = () => {
+    navigate({ to: "/fail", search: { code: "CONFIRM_ERROR", message: errorMessage ?? undefined } as any });
+  };
+
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-[600px] bg-white rounded-2xl shadow-sm p-8 flex flex-col items-center text-center gap-6">
@@ -75,6 +77,23 @@ function SuccessPage() {
             <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-gray-600 font-medium">결제 승인 처리 중입니다...</p>
           </div>
+        ) : status === "error" ? (
+          <>
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 text-3xl font-bold">
+              ✕
+            </div>
+            <h2 className="text-2xl font-bold text-black">결제 승인에 실패하였습니다</h2>
+            {errorMessage && (
+              <p className="text-red-500 text-sm">{errorMessage}</p>
+            )}
+            <Button
+              variant="primary"
+              onClick={handleRetry}
+              className="w-full py-3.5 rounded-xl font-bold text-base mt-2"
+            >
+              결제 다시 시도하기
+            </Button>
+          </>
         ) : (
           <>
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl font-bold">
@@ -83,9 +102,6 @@ function SuccessPage() {
             <h2 className="text-2xl font-bold text-black">
               결제가 성공적으로 완료되었습니다!
             </h2>
-            {errorMessage && (
-              <p className="text-red-500 text-sm">{errorMessage}</p>
-            )}
 
             <div className="w-full bg-gray-50 rounded-xl p-4 flex flex-col gap-3 text-left text-sm">
               <div className="flex justify-between border-b border-gray-200 pb-2">
