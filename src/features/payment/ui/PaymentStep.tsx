@@ -37,6 +37,9 @@ export function PaymentStep({
 
     async function initTossWidget() {
       setErrorMessage(null);
+      setWidgets(null);
+      setSessionId(null);
+      setServerAmount(null);
 
       if (!clientKey) {
         if (!isMounted) return;
