@@ -83,6 +83,12 @@ export function PaymentStep({
 
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+    // orderId를 키로 주문 정보를 sessionStorage에 보존 (fail 페이지 retry 복원용)
+    sessionStorage.setItem(
+      `pending_order_${orderId}`,
+      JSON.stringify({ totalPrice, personnelCount }),
+    );
+
     try {
       await widgets.requestPayment({
         orderId,

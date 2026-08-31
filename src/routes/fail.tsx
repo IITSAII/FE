@@ -14,7 +14,35 @@ function FailPage() {
   const message = searchParams.get("message");
 
   const handleRetry = () => {
-    navigate({ to: "/snap", search: { step: "payment" } as any });
+    // orderId로 sessionStorage에서 저장된 주문 정보 복원
+    const orderId = searchParams.get("orderId");
+    let restoredTotalPrice: number | undefined;
+    let restoredPersonnelCount: number | undefined;
+
+    if (orderId) {
+      try {
+        const stored = sessionStorage.getItem(`pending_order_${orderId}`);
+        if (stored) {
+          const parsed = JSON.parse(stored) as {
+            totalPrice: number;
+            personnelCount: number;
+          };
+          restoredTotalPrice = parsed.totalPrice;
+          restoredPersonnelCount = parsed.personnelCount;
+        }
+      } catch {
+        // sessionStorage 파싱 실패 시 무시
+      }
+    }
+
+    navigate({
+      to: "/snap",
+      search: { step: "payment" } as any,
+      state: {
+        restoredTotalPrice,
+        restoredPersonnelCount,
+      } as any,
+    });
   };
 
   return (
