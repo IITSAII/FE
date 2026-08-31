@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "../shared/ui/Button/Button";
+import { isApiError } from "../shared/lib/apiError";
+import { confirmPayment } from "../features/payment/api/paymentApi";
 
 export const Route = createFileRoute("/success")({
   component: SuccessPage,
@@ -21,46 +23,52 @@ function SuccessPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function confirmPayment() {
-      if (!paymentKey || !sessionId || !amount) {
+    let isMounted = true;
+    const controller = new AbortController();
+    const parsedAmount = Number(amount);
+
+    async function requestConfirm() {
+      if (
+        !paymentKey ||
+        !sessionId ||
+        !amount ||
+        !Number.isFinite(parsedAmount)
+      ) {
         setErrorMessage("결제 정보가 올바르지 않습니다.");
         setStatus("error");
         return;
       }
 
       try {
-        const response = await fetch(
-          `/api/sessions/${sessionId}/payment/confirm`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              paymentKey,
-              amount,
-            }),
-          },
+        await confirmPayment(
+          sessionId,
+          { paymentKey, amount: parsedAmount },
+          controller.signal,
         );
 
-        const json = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          console.error("Payment confirmation failed:", json);
-          setErrorMessage(json.message || "결제 승인 중 오류가 발생했습니다.");
-          setStatus("error");
-          return;
-        }
-
-        setStatus("success");
+        if (isMounted) setStatus("success");
       } catch (err) {
-        console.warn("Payment confirm endpoint call error:", err);
-        setErrorMessage("결제 승인 요청 중 네트워크 오류가 발생했습니다.");
-        setStatus("error");
+        // 언마운트로 인한 요청 취소는 사용자에게 노출하지 않는다.
+        if (isApiError(err) && err.code === "CANCELED") return;
+
+        console.error("Payment confirmation failed:", err);
+        if (isMounted) {
+          setErrorMessage(
+            err instanceof Error
+              ? err.message
+              : "결제 승인 중 오류가 발생했습니다.",
+          );
+          setStatus("error");
+        }
       }
     }
 
-    confirmPayment();
+    requestConfirm();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [paymentKey, sessionId, amount]);
 
   const handleNextStep = () => {
