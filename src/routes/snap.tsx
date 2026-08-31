@@ -37,6 +37,18 @@ function SnapFlowPage() {
       : null;
   const requestedStep = (searchParams?.get("step") as FlowStep) || "quantity";
 
+  const hasValidatedPaymentSession =
+    typeof window !== "undefined" &&
+    (() => {
+      const confirmedSessionId = sessionStorage.getItem(
+        "payment_confirmed_session_id",
+      );
+      const activeSessionId = sessionStorage.getItem("payment_session_id");
+      return (
+        Boolean(confirmedSessionId) && confirmedSessionId === activeSessionId
+      );
+    })();
+
   const [quantityData, setQuantityData] = useState<QuantityStepData | null>(
     null,
   );
@@ -50,7 +62,9 @@ function SnapFlowPage() {
   ];
   const isPostPaymentStep = postPaymentSteps.includes(requestedStep);
   const initialStep: FlowStep =
-    isPostPaymentStep && quantityData == null ? "quantity" : requestedStep;
+    isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession
+      ? "quantity"
+      : requestedStep;
 
   const [currentStep, setCurrentStep] = useState<FlowStep>(initialStep);
   const [relationData, setRelationData] = useState<RelationStepData | null>(
