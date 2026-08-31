@@ -114,7 +114,16 @@ export function PhotoStep({
   const capturePhoto = useCallback(() => {
     let dataUrl = "";
 
-    if (videoRef.current && canvasRef.current) {
+    const isStreamActive =
+      streamRef.current !== null &&
+      streamRef.current.getTracks().some((t) => t.readyState === "live");
+
+    if (
+      videoRef.current &&
+      canvasRef.current &&
+      isStreamActive &&
+      videoRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth || 585;
@@ -150,6 +159,9 @@ export function PhotoStep({
     return dataUrl;
   }, [currentPhotoIndex]);
 
+  // 모든 사진이 캡처된 후 정확히 한 번만 onNext 호출하는 완료 플래그
+  const onNextCalledRef = useRef(false);
+
   // 카운트다운 타이머 및 자동 샷 로직
   useEffect(() => {
     if (currentPhotoIndex >= totalPhotosCount) {
@@ -158,15 +170,7 @@ export function PhotoStep({
 
     if (countdown === 0) {
       const newPhoto = capturePhoto();
-      setCapturedPhotos((photos) => {
-        const updated = [...photos, newPhoto];
-        if (updated.length === totalPhotosCount) {
-          setTimeout(() => {
-            onNext?.({ photos: updated });
-          }, 500);
-        }
-        return updated;
-      });
+      setCapturedPhotos((photos) => [...photos, newPhoto]);
 
       setCurrentPhotoIndex((idx) => idx + 1);
       setCountdown(timerDurationSeconds);
@@ -184,8 +188,21 @@ export function PhotoStep({
     totalPhotosCount,
     timerDurationSeconds,
     capturePhoto,
-    onNext,
   ]);
+
+  // capturedPhotos가 totalPhotosCount에 도달하면 정확히 한 번 onNext 호출
+  useEffect(() => {
+    if (
+      capturedPhotos.length === totalPhotosCount &&
+      !onNextCalledRef.current
+    ) {
+      onNextCalledRef.current = true;
+      const timeout = setTimeout(() => {
+        onNext?.({ photos: capturedPhotos });
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [capturedPhotos, totalPhotosCount, onNext]);
 
   const currentMission =
     DEFAULT_MISSIONS[currentPhotoIndex % DEFAULT_MISSIONS.length];
