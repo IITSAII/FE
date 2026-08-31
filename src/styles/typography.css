@@ -6,6 +6,7 @@
 
 /* 사진 프레임 정보용 Poppins */
 @import "@fontsource/poppins/300.css";
+@import "@fontsource/poppins/500.css";
 
 :root {
   /* 폰트 패밀리: Urbanist(영문/숫자) 우선 적용 후 Pretendard(한글) 폴백 */
