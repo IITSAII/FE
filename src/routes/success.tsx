@@ -40,13 +40,23 @@ function SuccessPage() {
       }
 
       try {
-        await confirmPayment(
+        const result = await confirmPayment(
           sessionId,
           { paymentKey, amount: parsedAmount },
           controller.signal,
         );
 
-        if (isMounted) setStatus("success");
+        if (!isMounted) return;
+
+        if (result.status === "PAID") {
+          sessionStorage.setItem("payment_confirmed_session_id", sessionId);
+          setStatus("success");
+        } else {
+          setErrorMessage(
+            `결제 상태를 확인할 수 없습니다. (status: ${result.status})`,
+          );
+          setStatus("error");
+        }
       } catch (err) {
         // 언마운트로 인한 요청 취소는 사용자에게 노출하지 않는다.
         if (isApiError(err) && err.code === "CANCELED") return;
