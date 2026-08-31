@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export interface LoadingStepProps {
   onComplete?: () => void;
@@ -19,21 +19,25 @@ const LOADING_PHRASES = [
  */
 export function LoadingStep({ onComplete }: LoadingStepProps) {
   const [progress, setProgress] = useState(0);
+  const onCompleteCalledRef = useRef(false);
 
   useEffect(() => {
+    if (progress >= 100) return;
+
     const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          onComplete?.();
-          return 100;
-        }
-        return prev + 5;
-      });
+      setProgress((prev) => Math.min(prev + 5, 100));
     }, 150);
 
     return () => clearInterval(timer);
-  }, [onComplete]);
+  }, [progress]);
+
+  // progress가 100에 도달하면 정확히 한 번 onComplete 호출
+  useEffect(() => {
+    if (progress >= 100 && !onCompleteCalledRef.current) {
+      onCompleteCalledRef.current = true;
+      onComplete?.();
+    }
+  }, [progress, onComplete]);
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
