@@ -85,6 +85,13 @@ function SuccessPage() {
     navigate({ to: "/snap", search: { step: "relation" } as any });
   };
 
+  useEffect(() => {
+    if (status !== "success") return;
+
+    const timer = setTimeout(handleNextStep, 1500);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   const handleRetry = () => {
     navigate({
       to: "/fail",
