@@ -78,17 +78,6 @@ export function PaymentStep({
           value: nextAmount,
         });
 
-        await Promise.all([
-          widgetsInstance.renderPaymentMethods({
-            selector: "#payment-method",
-            variantKey: "DEFAULT",
-          }),
-          widgetsInstance.renderAgreement({
-            selector: "#agreement",
-            variantKey: "AGREEMENT",
-          }),
-        ]);
-
         if (isMounted) {
           setWidgets(widgetsInstance);
           setIsLoading(false);
@@ -121,15 +110,29 @@ export function PaymentStep({
     if (!widgets || !sessionId || serverAmount == null) return;
 
     try {
-      await widgets.requestPayment({
-        orderId: sessionId,
-        orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
-        successUrl: `${window.location.origin}/success`,
-        failUrl: `${window.location.origin}/fail`,
+      const paymentWindow = await widgets.renderPaymentWindow({
+        variantKey: {
+          paymentMethod: "DEFAULT",
+          agreement: "AGREEMENT",
+        },
+      });
+
+      paymentWindow.on("paymentRequest", async () => {
+        try {
+          await widgets.requestPayment({
+            orderId: sessionId,
+            orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
+            successUrl: `${window.location.origin}/success`,
+            failUrl: `${window.location.origin}/fail`,
+          });
+        } catch (err) {
+          console.error("Payment request failed:", err);
+          setErrorMessage("결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+        }
       });
     } catch (err) {
-      console.error("Payment request failed:", err);
-      setErrorMessage("결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error("Failed to open payment window:", err);
+      setErrorMessage("결제창을 여는 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -164,9 +167,6 @@ export function PaymentStep({
             </span>
           </div>
 
-          <div id="payment-method" className="w-full"></div>
-          <div id="agreement" className="w-full"></div>
-
           {errorMessage && (
             <div className="text-red-500 text-center py-2 text-sm">
               {errorMessage}
@@ -191,7 +191,7 @@ export function PaymentStep({
             className="rounded-full py-5"
           >
             {isLoading
-              ? "위젯 로딩 중..."
+              ? "결제 정보 준비 중..."
               : `${resolvedAmount.toLocaleString()}원 결제하기`}
           </Button>
 
