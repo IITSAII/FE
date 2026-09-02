@@ -6,6 +6,7 @@ import {
 } from "@tosspayments/tosspayments-sdk";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { Button } from "../../../shared/ui/Button/Button";
+import { Card } from "../../../shared/ui/Card/Card";
 import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { createSession } from "../api/paymentApi";
@@ -78,17 +79,6 @@ export function PaymentStep({
           value: nextAmount,
         });
 
-        await Promise.all([
-          widgetsInstance.renderPaymentMethods({
-            selector: "#payment-method",
-            variantKey: "DEFAULT",
-          }),
-          widgetsInstance.renderAgreement({
-            selector: "#agreement",
-            variantKey: "AGREEMENT",
-          }),
-        ]);
-
         if (isMounted) {
           setWidgets(widgetsInstance);
           setIsLoading(false);
@@ -121,60 +111,103 @@ export function PaymentStep({
     if (!widgets || !sessionId || serverAmount == null) return;
 
     try {
-      await widgets.requestPayment({
-        orderId: sessionId,
-        orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
-        successUrl: `${window.location.origin}/success`,
-        failUrl: `${window.location.origin}/fail`,
+      const paymentWindow = await widgets.renderPaymentWindow({
+        variantKey: {
+          paymentMethod: "DEFAULT",
+          agreement: "AGREEMENT",
+        },
+      });
+
+      paymentWindow.on("paymentRequest", async () => {
+        try {
+          await widgets.requestPayment({
+            orderId: sessionId,
+            orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
+            successUrl: `${window.location.origin}/success`,
+            failUrl: `${window.location.origin}/fail`,
+          });
+        } catch (err) {
+          console.error("Payment request failed:", err);
+          await paymentWindow.destroy();
+          setErrorMessage(
+            "결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.",
+          );
+        }
       });
     } catch (err) {
-      console.error("Payment request failed:", err);
-      setErrorMessage("결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error("Failed to open payment window:", err);
+      setErrorMessage(
+        "결제창을 여는 중 오류가 발생했습니다. 다시 시도해주세요.",
+      );
     }
   };
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
+        {/* 서브 타이머 */}
+        <div className="w-full flex justify-end">
+          <span className="text-ipad-heading-1-medium text-gray-600">60</span>
+        </div>
+
+        {/* 타이틀 영역 */}
         <div className="w-full pt-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
-            결제를 진행해주세요 !
+            결제를 진행해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            선택한 수량({personnelCount}인) 및 금액(
-            {resolvedAmount.toLocaleString()}원) 확인 후 결제해주세요.
+            선택한 수량 및 금액을 확인 후 결제해주세요.
           </p>
         </div>
 
-        <div className="w-full flex flex-col gap-6 my-auto max-w-[600px] mx-auto bg-white p-6 rounded-2xl shadow-sm">
-          <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-            <span className="text-gray-600 text-ipad-body-1-light">
-              주문 상품
-            </span>
-            <span className="font-semibold text-black">
-              잇, 사이 사진 촬영 ({personnelCount}인)
-            </span>
-          </div>
-          <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-            <span className="text-gray-600 text-ipad-body-1-light">
-              총 결제 금액
-            </span>
-            <span className="text-xl font-bold text-green-500">
-              {resolvedAmount.toLocaleString()}원
-            </span>
-          </div>
+        {/* 결제 영수증 카드 */}
+        <div className="w-full flex flex-col items-center gap-17.5 my-auto">
+          <Card className="max-w-155.75 px-[61.5px] py-[61.88px] gap-2">
+            <div className="w-full flex flex-col gap-12.5">
+              <div className="w-full flex flex-col gap-7 text-ipad-heading-3-medium text-black">
+                <div className="flex items-center justify-between">
+                  <span>상품 금액</span>
+                  <span className="font-poppins">
+                    ₩ {resolvedAmount.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>상품 수량</span>
+                  <span>{personnelCount}장</span>
+                </div>
+              </div>
 
-          <div id="payment-method" className="w-full"></div>
-          <div id="agreement" className="w-full"></div>
-
-          {errorMessage && (
-            <div className="text-red-500 text-center py-2 text-sm">
-              {errorMessage}
+              <div className="w-full flex items-center justify-between border-t border-gray-100 pt-2">
+                <span className="text-ipad-heading-2-medium text-black">
+                  총 결제 금액
+                </span>
+                <span className="text-ipad-heading-3-medium text-green-500 font-poppins">
+                  ₩ {resolvedAmount.toLocaleString()}
+                </span>
+              </div>
             </div>
-          )}
+
+            {errorMessage && (
+              <p className="text-red-500 text-center text-sm pt-2">
+                {errorMessage}
+              </p>
+            )}
+          </Card>
+
+          <Button
+            variant="dark"
+            onClick={handlePayment}
+            disabled={isLoading || !widgets || !sessionId}
+            className="w-full rounded-[8px] py-4 text-ipad-heading-2-medium text-green-200 max-w-155.75"
+          >
+            {isLoading
+              ? "결제 정보 준비 중..."
+              : `${resolvedAmount.toLocaleString()}원 결제하기`}
+          </Button>
         </div>
 
-        <div className="w-full flex items-center justify-between pt-10">
+        {/* 결제 CTA 및 뒤로가기 */}
+        <div className="w-full flex flex-col items-start">
           <IconButton
             variant="outline"
             onClick={onBack}
@@ -182,20 +215,6 @@ export function PaymentStep({
           >
             <LeftArrowIcon className="w-8 h-8 text-gray-500" />
           </IconButton>
-
-          <Button
-            variant="primary"
-            size="inline"
-            onClick={handlePayment}
-            disabled={isLoading || !widgets || !sessionId}
-            className="rounded-full py-5"
-          >
-            {isLoading
-              ? "위젯 로딩 중..."
-              : `${resolvedAmount.toLocaleString()}원 결제하기`}
-          </Button>
-
-          <div />
         </div>
       </main>
     </div>
