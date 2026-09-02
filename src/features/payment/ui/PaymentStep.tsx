@@ -128,6 +128,7 @@ export function PaymentStep({
           });
         } catch (err) {
           console.error("Payment request failed:", err);
+          await paymentWindow.destroy();
           setErrorMessage(
             "결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.",
           );
