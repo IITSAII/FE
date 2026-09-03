@@ -6,11 +6,15 @@ const Header = () => {
   const location = useLocation();
   const isMobileRoute = location.pathname.startsWith("/intro");
   const isDownloadRoute = location.pathname.endsWith("/download");
+  const isLocationRoute = location.pathname.endsWith("/location");
   const { sessionId } = useParams({ strict: false });
 
+  // 사진 저장하기/위치 보기 페이지는 자체 상단바(뒤로가기+타이틀)를 갖고 있으므로
+  // 전역 Header(로고+갤러리 버튼)를 노출하지 않는다.
+  if (isDownloadRoute || isLocationRoute) return null;
+
   // sessionId가 있는 `/intro/{sessionId}`(QR 진입)에서만 사진 아이콘 버튼을 노출한다.
-  // 다운로드 페이지 자신에서는 노출하지 않는다.
-  const showGalleryButton = Boolean(sessionId) && !isDownloadRoute;
+  const showGalleryButton = Boolean(sessionId);
 
   return (
     <header className="fixed top-0 right-0 left-0 z-10">
