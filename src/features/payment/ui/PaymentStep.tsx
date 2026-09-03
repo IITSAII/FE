@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   loadTossPayments,
   ANONYMOUS,
@@ -9,28 +9,58 @@ import { Button } from "../../../shared/ui/Button/Button";
 import { Card } from "../../../shared/ui/Card/Card";
 import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
-import { createSession } from "../api/paymentApi";
+import { useCountdown } from "../../../shared/hooks/useCountdown";
+import { createSession, getSessionStatus } from "../api/paymentApi";
+
+type PaymentWindow = Awaited<
+  ReturnType<TossPaymentsWidgets["renderPaymentWindow"]>
+>;
 
 export interface PaymentStepProps {
   totalPrice?: number;
   personnelCount?: number;
   onNext?: () => void;
   onBack?: () => void;
+  /** 타이머 만료 시 호출된다(결제창을 닫고 인트로 화면으로 복귀). */
+  onExpire?: () => void;
+  /** 세션 생성 직후(sessionId 확보 시) 호출된다. */
+  onSessionCreated?: (sessionId: string) => void;
 }
 
 export function PaymentStep({
   totalPrice = 3000,
   personnelCount = 2,
   onBack,
+  onExpire,
+  onSessionCreated,
 }: PaymentStepProps) {
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [serverAmount, setServerAmount] = useState<number | null>(null);
+  const [stepExpiresAt, setStepExpiresAt] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
+  const paymentWindowRef = useRef<PaymentWindow | null>(null);
+  const onSessionCreatedRef = useRef(onSessionCreated);
+  onSessionCreatedRef.current = onSessionCreated;
 
   const clientKey = import.meta.env.TOSS_CLIENT_KEY as string | undefined;
   const resolvedAmount = serverAmount ?? totalPrice;
+
+  const handleExpire = () => {
+    setIsExpired(true);
+    setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
+    paymentWindowRef.current?.destroy().catch(() => {});
+    paymentWindowRef.current = null;
+    setTimeout(() => onExpire?.(), 1500);
+  };
+
+  const { secondsLeft } = useCountdown({
+    expiresAt: stepExpiresAt,
+    enabled: stepExpiresAt != null && !isExpired,
+    onExpire: handleExpire,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +98,16 @@ export function PaymentStep({
         setSessionId(nextSessionId);
         sessionStorage.setItem("payment_session_id", nextSessionId);
         setServerAmount(nextAmount);
+        onSessionCreatedRef.current?.(nextSessionId);
+
+        try {
+          const status = await getSessionStatus(nextSessionId, controller.signal);
+          if (isMounted) setStepExpiresAt(status.stepExpiresAt);
+        } catch (statusErr) {
+          if (!(isApiError(statusErr) && statusErr.code === "CANCELED")) {
+            console.error("세션 상태 조회 실패:", statusErr);
+          }
+        }
 
         const tossPayments = await loadTossPayments(clientKey);
         const widgetsInstance = tossPayments.widgets({
@@ -108,7 +148,7 @@ export function PaymentStep({
   }, [clientKey, personnelCount, totalPrice]);
 
   const handlePayment = async () => {
-    if (!widgets || !sessionId || serverAmount == null) return;
+    if (!widgets || !sessionId || serverAmount == null || isExpired) return;
 
     try {
       const paymentWindow = await widgets.renderPaymentWindow({
@@ -117,6 +157,9 @@ export function PaymentStep({
           agreement: "AGREEMENT",
         },
       });
+
+      // 결제창이 열려있는 동안 타이머가 만료되면(handleExpire) 강제로 닫을 수 있도록 참조를 보관한다.
+      paymentWindowRef.current = paymentWindow;
 
       paymentWindow.on("paymentRequest", async () => {
         try {
@@ -147,7 +190,9 @@ export function PaymentStep({
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">60</span>
+          <span className="text-ipad-heading-1-medium text-gray-600">
+            {secondsLeft}
+          </span>
         </div>
 
         {/* 타이틀 영역 */}
@@ -206,12 +251,14 @@ export function PaymentStep({
             <Button
               variant="dark"
               onClick={handlePayment}
-              disabled={isLoading || !widgets || !sessionId}
+              disabled={isLoading || !widgets || !sessionId || isExpired}
               className="w-full rounded-[8px] py-4 text-ipad-heading-2-medium text-green-200 max-w-106.75"
             >
-              {isLoading
-                ? "결제 정보 준비 중..."
-                : `${resolvedAmount.toLocaleString()}원 결제하기`}
+              {isExpired
+                ? "시간이 초과되었습니다"
+                : isLoading
+                  ? "결제 정보 준비 중..."
+                  : `${resolvedAmount.toLocaleString()}원 결제하기`}
             </Button>
           </div>
         </div>

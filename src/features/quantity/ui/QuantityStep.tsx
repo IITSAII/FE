@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PersonnelCard } from "../../../shared/ui/Card/PersonnelCard";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
+import { useCountdown } from "../../../shared/hooks/useCountdown";
 import MinusIcon from "../../../shared/assets/icons/MinusIcon.svg?react";
 import PlusIcon from "../../../shared/assets/icons/PlusIcon.svg?react";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
@@ -10,18 +11,28 @@ export interface QuantityStepData {
   totalPrice: number;
 }
 
+const TIMER_DURATION_SECONDS = 60;
+
 export interface QuantityStepProps {
   onNext?: (data: QuantityStepData) => void;
   onBack?: () => void;
+  /** 타이머 만료 시 호출된다(인트로 화면으로 복귀). */
+  onExpire?: () => void;
 }
 
 /**
  * 사진 수량 선택 플로우 단계 컴포넌트 (QuantityStep)
  * - 인원 수 및 수량을 선택하고 하단 다음 버튼 클릭 시 다음 플로우 단계로 전달합니다.
+ * - 아직 세션이 생성되지 않은 단계라 서버 동기화 없이 로컬 60초 타이머로 동작한다.
  */
-export function QuantityStep({ onNext }: QuantityStepProps) {
+export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
   const [personnelCount, setPersonnelCount] = useState(2);
   const pricePerPerson = 1500;
+
+  const { secondsLeft } = useCountdown({
+    durationSeconds: TIMER_DURATION_SECONDS,
+    onExpire,
+  });
 
   const handleDecrease = () => {
     setPersonnelCount((prev) => Math.max(2, prev - 2));
@@ -45,7 +56,9 @@ export function QuantityStep({ onNext }: QuantityStepProps) {
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">100</span>
+          <span className="text-ipad-heading-1-medium text-gray-600">
+            {secondsLeft}
+          </span>
         </div>
 
         {/* 타이틀 영역 */}

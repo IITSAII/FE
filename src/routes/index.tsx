@@ -15,7 +15,7 @@ import {
   PhotoSelectionStep,
   type PhotoSelectionStepData,
 } from "../features/photo-selection/ui/PhotoSelectionStep";
-import { FrameStep } from "../features/frame/ui/FrameStep";
+import { FrameStep, type FrameStepData } from "../features/frame/ui/FrameStep";
 import { LoadingStep } from "../features/loading/ui/LoadingStep";
 
 export type FlowStep =
@@ -69,12 +69,18 @@ function SnapFlowPage() {
       : requestedStep;
 
   const [currentStep, setCurrentStep] = useState<FlowStep>(initialStep);
+  const [sessionId, setSessionId] = useState<string | null>(() =>
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("payment_session_id")
+      : null,
+  );
   const [relationData, setRelationData] = useState<RelationStepData | null>(
     null,
   );
   const [photoData, setPhotoData] = useState<PhotoStepData | null>(null);
   const [selectedPhotoData, setSelectedPhotoData] =
     useState<PhotoSelectionStepData | null>(null);
+  const [frameData, setFrameData] = useState<FrameStepData | null>(null);
 
   const handleIntroNext = () => {
     setCurrentStep("quantity");
@@ -104,17 +110,20 @@ function SnapFlowPage() {
     setCurrentStep("frame");
   };
 
-  const handleFrameNext = () => {
+  const handleFrameNext = (data: FrameStepData) => {
+    setFrameData(data);
     setCurrentStep("loading");
   };
 
   const handleResetFlow = () => {
     sessionStorage.removeItem("payment_session_id");
     sessionStorage.removeItem("payment_confirmed_session_id");
+    setSessionId(null);
     setQuantityData(null);
     setRelationData(null);
     setPhotoData(null);
     setSelectedPhotoData(null);
+    setFrameData(null);
     setCurrentStep("intro");
   };
 
@@ -142,7 +151,7 @@ function SnapFlowPage() {
     <div className="w-full min-h-screen">
       {currentStep === "intro" && <IntroStep onNext={handleIntroNext} />}
       {currentStep === "quantity" && (
-        <QuantityStep onNext={handleQuantityNext} />
+        <QuantityStep onNext={handleQuantityNext} onExpire={handleResetFlow} />
       )}
       {currentStep === "payment" && (
         <PaymentStep
@@ -150,38 +159,54 @@ function SnapFlowPage() {
           personnelCount={quantityData?.personnelCount}
           onNext={handlePaymentNext}
           onBack={handleBackToQuantity}
+          onExpire={handleResetFlow}
+          onSessionCreated={setSessionId}
         />
       )}
-      {currentStep === "relation" && (
+      {currentStep === "relation" && sessionId && (
         <RelationStep
+          sessionId={sessionId}
           onNext={handleRelationNext}
           onBack={handleBackToPayment}
         />
       )}
-      {currentStep === "photo" && (
+      {currentStep === "photo" && sessionId && (
         <PhotoStep
+          sessionId={sessionId}
           selectedRelationTitle={relationData?.selectedRelationTitle}
           onNext={handlePhotoNext}
           onBack={handleBackToRelation}
         />
       )}
-      {currentStep === "select-photo" && (
+      {currentStep === "select-photo" && sessionId && (
         <PhotoSelectionStep
+          sessionId={sessionId}
           capturedPhotos={photoData?.photos}
           onNext={handleSelectionNext}
           onBack={handleBackToPhoto}
         />
       )}
-      {currentStep === "frame" && (
+      {currentStep === "frame" && sessionId && (
         <FrameStep
+          sessionId={sessionId}
           selectedPhotos={selectedPhotoData?.selectedPhotos}
           relationshipTitle={relationData?.selectedRelationTitle}
           onNext={handleFrameNext}
           onBack={handleBackToSelection}
         />
       )}
-      {currentStep === "loading" && (
-        <LoadingStep onComplete={handleResetFlow} />
+      {currentStep === "loading" && sessionId && (
+        <LoadingStep
+          sessionId={sessionId}
+          photos={selectedPhotoData?.selectedPhotos.map(
+            (photo) => photo.dataUrl,
+          )}
+          relationshipTitle={relationData?.selectedRelationTitle}
+          variant={frameData?.variant}
+          theme={frameData?.theme}
+          filter={frameData?.filter}
+          onComplete={handleResetFlow}
+        />
       )}
     </div>
   );
