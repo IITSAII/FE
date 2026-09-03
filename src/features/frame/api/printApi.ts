@@ -52,7 +52,7 @@ export async function uploadFinalImage(
   const { data } = await api.post<{ finalImageUrl: string }>(
     `/sessions/${sessionId}/print/final-image`,
     formData,
-    { signal },
+    { signal, headers: { "Content-Type": undefined } },
   );
   return data;
 }

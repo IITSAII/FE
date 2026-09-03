@@ -23,7 +23,7 @@ export async function uploadPhoto(
   const { data } = await api.post<PhotoInfo>(
     `/sessions/${sessionId}/photos`,
     formData,
-    { signal },
+    { signal, headers: { "Content-Type": undefined } },
   );
   return data;
 }
