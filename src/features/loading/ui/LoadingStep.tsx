@@ -6,6 +6,7 @@ import {
   type PhotoFilter,
 } from "../../../shared/ui/PhotoFrame/PhotoFrame";
 import { QrCode } from "../../../shared/ui/QrCode/QrCode";
+import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
@@ -42,10 +43,12 @@ export function LoadingStep({
   theme = "pichimothan",
   filter = "default",
   onComplete,
+  onBack,
 }: LoadingStepProps) {
   const [progress, setProgress] = useState(0);
   const [isUploadDone, setIsUploadDone] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const onCompleteCalledRef = useRef(false);
   const captureNodeRef = useRef<HTMLDivElement>(null);
   const uploadStartedRef = useRef(false);
@@ -77,6 +80,7 @@ export function LoadingStep({
         const blob = await exportFrameImage(captureNodeRef.current);
         await uploadFinalImage(sessionId, blob);
         setIsUploadDone(true);
+        setUploadError(null);
       } catch (err) {
         console.error("최종 이미지 업로드 실패:", err);
         setUploadError("사진 인화 준비 중 오류가 발생했습니다.");
@@ -84,7 +88,13 @@ export function LoadingStep({
     }
 
     captureAndUpload();
-  }, [sessionId]);
+  }, [sessionId, retryCount]);
+
+  const handleRetryUpload = () => {
+    uploadStartedRef.current = false;
+    setUploadError(null);
+    setRetryCount((count) => count + 1);
+  };
 
   // 진행률 100% + 업로드 완료가 모두 충족되면 정확히 한 번 onComplete 호출
   useEffect(() => {
@@ -127,6 +137,22 @@ export function LoadingStep({
               ? uploadError
               : "인화한 사진을 가지고 화면 속 매장에 방문하면 혜택을 받을 수 있어요."}
           </p>
+          {uploadError && (
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                variant="primary"
+                size="inline"
+                onClick={handleRetryUpload}
+              >
+                다시 시도
+              </Button>
+              {onBack && (
+                <Button variant="gray" size="inline" onClick={onBack}>
+                  처음으로 돌아가기
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 업체 위치 및 QR 영역 */}

@@ -206,6 +206,7 @@ function SnapFlowPage() {
           theme={frameData?.theme}
           filter={frameData?.filter}
           onComplete={handleResetFlow}
+          onBack={handleResetFlow}
         />
       )}
     </div>
