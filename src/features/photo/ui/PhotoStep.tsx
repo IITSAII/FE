@@ -1,11 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MissionCard } from "../../../shared/ui/Card/MissionCard";
+import { uploadPhoto } from "../api/photoApi";
+import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
+
+export interface CapturedPhoto {
+  photoId: number | null;
+  shotNumber: number;
+  dataUrl: string;
+}
 
 export interface PhotoStepData {
-  photos: string[];
+  photos: CapturedPhoto[];
 }
 
 export interface PhotoStepProps {
+  sessionId: string;
   selectedRelationTitle?: string | null;
   totalPhotosCount?: number;
   timerDurationSeconds?: number;
@@ -47,6 +56,7 @@ const DEFAULT_MISSIONS = [
  * - 관계 미설정 시 미션 카드를 숨기고 카메라 뷰 영역을 최상단으로 배치합니다.
  */
 export function PhotoStep({
+  sessionId,
   selectedRelationTitle,
   totalPhotosCount = 6,
   timerDurationSeconds = 10,
@@ -54,12 +64,25 @@ export function PhotoStep({
 }: PhotoStepProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // 0..5
   const [countdown, setCountdown] = useState(timerDurationSeconds);
-  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const capturedPhotosRef = useRef<CapturedPhoto[]>([]);
+  const uploadPromisesRef = useRef<Promise<void>[]>([]);
+
+  const updateCapturedPhotos = useCallback(
+    (updater: (prev: CapturedPhoto[]) => CapturedPhoto[]) => {
+      setCapturedPhotos((prev) => {
+        const next = updater(prev);
+        capturedPhotosRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
 
   const hasRelation =
     Boolean(selectedRelationTitle) &&
@@ -169,8 +192,32 @@ export function PhotoStep({
     }
 
     if (countdown === 0) {
-      const newPhoto = capturePhoto();
-      setCapturedPhotos((photos) => [...photos, newPhoto]);
+      const shotNumber = currentPhotoIndex + 1;
+      const dataUrl = capturePhoto();
+      updateCapturedPhotos((photos) => [
+        ...photos,
+        { photoId: null, shotNumber, dataUrl },
+      ]);
+
+      // 촬영 즉시 백엔드에 업로드하고, 완료되면 로컬 상태에 photoId를 반영한다.
+      const uploadPromise = uploadPhoto(
+        sessionId,
+        shotNumber,
+        dataUrlToBlob(dataUrl),
+      )
+        .then((info) => {
+          updateCapturedPhotos((photos) =>
+            photos.map((photo) =>
+              photo.shotNumber === shotNumber
+                ? { ...photo, photoId: info.photoId }
+                : photo,
+            ),
+          );
+        })
+        .catch((err) => {
+          console.error(`사진 업로드 실패 (shot ${shotNumber}):`, err);
+        });
+      uploadPromisesRef.current.push(uploadPromise);
 
       setCurrentPhotoIndex((idx) => idx + 1);
       setCountdown(timerDurationSeconds);
@@ -188,19 +235,22 @@ export function PhotoStep({
     totalPhotosCount,
     timerDurationSeconds,
     capturePhoto,
+    sessionId,
+    updateCapturedPhotos,
   ]);
 
-  // capturedPhotos가 totalPhotosCount에 도달하면 정확히 한 번 onNext 호출
+  // capturedPhotos가 totalPhotosCount에 도달하면, 업로드가 모두 끝난 뒤 정확히 한 번 onNext 호출
   useEffect(() => {
     if (
       capturedPhotos.length === totalPhotosCount &&
       !onNextCalledRef.current
     ) {
       onNextCalledRef.current = true;
-      const timeout = setTimeout(() => {
-        onNext?.({ photos: capturedPhotos });
-      }, 500);
-      return () => clearTimeout(timeout);
+      (async () => {
+        await Promise.allSettled(uploadPromisesRef.current);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        onNext?.({ photos: capturedPhotosRef.current });
+      })();
     }
   }, [capturedPhotos, totalPhotosCount, onNext]);
 
@@ -281,7 +331,7 @@ export function PhotoStep({
                 >
                   {photo ? (
                     <img
-                      src={photo}
+                      src={photo.dataUrl}
                       alt={`촬영 사진 ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

@@ -1,6 +1,23 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  PhotoFrame,
+  type PhotoFrameVariant,
+  type PhotoFrameTheme,
+  type PhotoFilter,
+} from "../../../shared/ui/PhotoFrame/PhotoFrame";
+import { QrCode } from "../../../shared/ui/QrCode/QrCode";
+import { Button } from "../../../shared/ui/Button/Button";
+import { buildGalleryUrl } from "../../../shared/lib/qrCode";
+import { exportFrameImage } from "../../frame/lib/exportFrameImage";
+import { uploadFinalImage } from "../../frame/api/printApi";
 
 export interface LoadingStepProps {
+  sessionId: string;
+  photos?: string[];
+  relationshipTitle?: string | null;
+  variant?: PhotoFrameVariant;
+  theme?: PhotoFrameTheme;
+  filter?: PhotoFilter;
   onComplete?: () => void;
   onBack?: () => void;
 }
@@ -15,11 +32,28 @@ const LOADING_PHRASES = [
 
 /**
  * 사진 인화 및 출력 로딩 플로우 단계 컴포넌트 (LoadingStep)
- * - 0%부터 100%까지 사진 출력 프로그레스를 진행하고 인화 완료 시 안내 메시지를 표시합니다.
+ * - 화면 밖에 실물 크기 PhotoFrame을 렌더링해 최종 이미지로 캡처, 서버에 업로드한다.
+ * - 0%부터 100%까지 사진 출력 프로그레스를 진행하고, 업로드 완료 + 진행률 100% 둘 다 충족해야 완료 처리한다.
  */
-export function LoadingStep({ onComplete }: LoadingStepProps) {
+export function LoadingStep({
+  sessionId,
+  photos = [],
+  relationshipTitle,
+  variant = "dark",
+  theme = "pichimothan",
+  filter = "default",
+  onComplete,
+  onBack,
+}: LoadingStepProps) {
   const [progress, setProgress] = useState(0);
+  const [isUploadDone, setIsUploadDone] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const onCompleteCalledRef = useRef(false);
+  const captureNodeRef = useRef<HTMLDivElement>(null);
+  const uploadStartedRef = useRef(false);
+
+  const qrCodeUrl = buildGalleryUrl(sessionId);
 
   useEffect(() => {
     if (progress >= 100) return;
@@ -31,16 +65,66 @@ export function LoadingStep({ onComplete }: LoadingStepProps) {
     return () => clearInterval(timer);
   }, [progress]);
 
-  // progress가 100에 도달하면 정확히 한 번 onComplete 호출
+  // 화면 밖 PhotoFrame을 캡처해 최종 이미지로 업로드한다(정확히 한 번).
   useEffect(() => {
-    if (progress >= 100 && !onCompleteCalledRef.current) {
+    if (uploadStartedRef.current) return;
+    uploadStartedRef.current = true;
+
+    async function captureAndUpload() {
+      try {
+        // 폰트/이미지 로딩을 한 틱 기다린 뒤 캡처한다.
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (!captureNodeRef.current) {
+          throw new Error("캡처할 프레임을 찾을 수 없습니다.");
+        }
+        const blob = await exportFrameImage(captureNodeRef.current);
+        await uploadFinalImage(sessionId, blob);
+        setIsUploadDone(true);
+        setUploadError(null);
+      } catch (err) {
+        console.error("최종 이미지 업로드 실패:", err);
+        setUploadError("사진 인화 준비 중 오류가 발생했습니다.");
+      }
+    }
+
+    captureAndUpload();
+  }, [sessionId, retryCount]);
+
+  const handleRetryUpload = () => {
+    uploadStartedRef.current = false;
+    setUploadError(null);
+    setRetryCount((count) => count + 1);
+  };
+
+  // 진행률 100% + 업로드 완료가 모두 충족되면 정확히 한 번 onComplete 호출
+  useEffect(() => {
+    if (
+      progress >= 100 &&
+      isUploadDone &&
+      !onCompleteCalledRef.current
+    ) {
       onCompleteCalledRef.current = true;
       onComplete?.();
     }
-  }, [progress, onComplete]);
+  }, [progress, isUploadDone, onComplete]);
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
+      {/* 화면 밖 실물 크기 PhotoFrame — 최종 이미지 캡처 전용, 화면에는 보이지 않는다 */}
+      <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden>
+        <div ref={captureNodeRef}>
+          <PhotoFrame
+            variant={variant}
+            theme={theme}
+            photos={photos}
+            relationship={relationshipTitle || "Friend"}
+            date="2026.05.16"
+            qrCodeUrl={qrCodeUrl}
+            filter={filter}
+          />
+        </div>
+      </div>
+
       {/* 메인 프레임 영역 (최대 너비 834px) */}
       <main className="w-full max-w-[834px] px-6 pt-43.75 pb-[53.5px] flex-1 flex flex-col">
         {/* 타이틀 영역 */}
@@ -49,8 +133,26 @@ export function LoadingStep({ onComplete }: LoadingStepProps) {
             사진을 인화 중입니다!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            인화한 사진을 가지고 화면 속 매장에 방문하면 혜택을 받을 수 있어요.
+            {uploadError
+              ? uploadError
+              : "인화한 사진을 가지고 화면 속 매장에 방문하면 혜택을 받을 수 있어요."}
           </p>
+          {uploadError && (
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                variant="primary"
+                size="inline"
+                onClick={handleRetryUpload}
+              >
+                다시 시도
+              </Button>
+              {onBack && (
+                <Button variant="gray" size="inline" onClick={onBack}>
+                  처음으로 돌아가기
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 업체 위치 및 QR 영역 */}
@@ -89,7 +191,12 @@ export function LoadingStep({ onComplete }: LoadingStepProps) {
               <div className="size-6.5 bg-ipad-background" />
 
               <div className="size-[190px] bg-ipad-background flex justify-center items-center">
-                <div className="size-[150px] bg-green-950" />
+                <QrCode
+                  url={qrCodeUrl}
+                  size={150}
+                  dotsColor="#0a2e1f"
+                  backgroundColor="#ffffff"
+                />
               </div>
             </div>
           </div>

@@ -1,16 +1,38 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
+import { useCountdown } from "../../../shared/hooks/useCountdown";
+import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
+import { selectPhotos } from "../api/photoSelectionApi";
+import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
 
 export interface PhotoSelectionStepData {
-  selectedPhotos: string[];
+  selectedPhotos: CapturedPhoto[];
 }
 
 export interface PhotoSelectionStepProps {
-  capturedPhotos?: string[];
+  sessionId: string;
+  capturedPhotos?: CapturedPhoto[];
   maxSelectCount?: number;
   onNext?: (data: PhotoSelectionStepData) => void;
   onBack?: () => void;
+}
+
+function pickRandomIndices(
+  totalCount: number,
+  excludeIndices: number[],
+  count: number,
+): number[] {
+  const excludeSet = new Set(excludeIndices);
+  const candidates = Array.from({ length: totalCount }, (_, i) => i).filter(
+    (i) => !excludeSet.has(i),
+  );
+  // Fisher-Yates 셔플 후 앞에서부터 필요한 개수만 취한다.
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  return candidates.slice(0, count);
 }
 
 /**
@@ -18,12 +40,17 @@ export interface PhotoSelectionStepProps {
  * - 이전 단계에서 촬영한 6장의 사진 중 4장을 선택하여 우측 메인 프레임에 배치합니다.
  */
 export function PhotoSelectionStep({
+  sessionId,
   capturedPhotos = [],
   maxSelectCount = 4,
   onNext,
 }: PhotoSelectionStepProps) {
   // 선택된 사진들의 인덱스 목록 (선택된 순서 보장: 0..3)
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasSubmittedRef = useRef(false);
+
+  const { status } = useStepExpiry(sessionId);
 
   const handleTogglePhoto = (index: number) => {
     setSelectedIndices((prev) => {
@@ -37,16 +64,62 @@ export function PhotoSelectionStep({
     });
   };
 
+  const proceed = async (indicesToSubmit: number[]) => {
+    if (hasSubmittedRef.current) return;
+    hasSubmittedRef.current = true;
+    setIsSubmitting(true);
+
+    const finalIndices =
+      indicesToSubmit.length >= maxSelectCount
+        ? indicesToSubmit.slice(0, maxSelectCount)
+        : [
+            ...indicesToSubmit,
+            ...pickRandomIndices(
+              capturedPhotos.length,
+              indicesToSubmit,
+              maxSelectCount - indicesToSubmit.length,
+            ),
+          ];
+
+    const selectedPhotos = finalIndices.map((idx) => capturedPhotos[idx]);
+    const photoIds = selectedPhotos
+      .map((photo) => photo?.photoId)
+      .filter((id): id is number => id != null);
+
+    try {
+      if (photoIds.length !== maxSelectCount) {
+        throw new Error("일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.");
+      }
+      await selectPhotos(sessionId, photoIds);
+    } catch (err) {
+      console.error("사진 선택 저장 실패:", err);
+      hasSubmittedRef.current = false;
+      setIsSubmitting(false);
+      alert("사진 선택 저장에 실패했습니다. 다시 시도해주세요.");
+      return;
+    }
+
+    onNext?.({ selectedPhotos });
+  };
+
   const handleNextStep = () => {
     if (selectedIndices.length < maxSelectCount) {
       alert(`사진 ${maxSelectCount}장을 모두 선택해 주세요!`);
       return;
     }
-    if (onNext) {
-      const selectedPhotos = selectedIndices.map((idx) => capturedPhotos[idx]);
-      onNext({ selectedPhotos });
-    }
+    proceed(selectedIndices);
   };
+
+  const handleExpire = () => {
+    // 만료 시 이미 선택해둔 사진은 유지하고, 남은 슬롯만 랜덤으로 채운다.
+    proceed(selectedIndices);
+  };
+
+  const { secondsLeft } = useCountdown({
+    expiresAt: status?.stepExpiresAt,
+    enabled: status?.stepExpiresAt != null && !isSubmitting,
+    onExpire: handleExpire,
+  });
 
   const isNextEnabled = selectedIndices.length === maxSelectCount;
 
@@ -56,7 +129,9 @@ export function PhotoSelectionStep({
       <main className="w-full max-w-208.5 px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">100</span>
+          <span className="text-ipad-heading-1-medium text-gray-600">
+            {secondsLeft}
+          </span>
         </div>
 
         {/* 타이틀 영역 */}
@@ -81,18 +156,20 @@ export function PhotoSelectionStep({
             <div className="w-46.25 h-137.75 flex flex-col gap-[2.85px] bg-frame-dark">
               {Array.from({ length: maxSelectCount }).map((_, slotIndex) => {
                 const photoIndex = selectedIndices[slotIndex];
-                const photoUrl =
-                  photoIndex !== undefined ? capturedPhotos[photoIndex] : null;
+                const photo =
+                  photoIndex !== undefined
+                    ? capturedPhotos[photoIndex]
+                    : null;
 
                 return (
                   <div
                     key={slotIndex}
                     className="w-38 h-30 overflow-hidden bg-gray-100 flex items-center justify-center relative"
                   >
-                    {photoUrl && (
+                    {photo && (
                       <>
                         <img
-                          src={photoUrl}
+                          src={photo.dataUrl}
                           alt={`선택된 사진 ${slotIndex + 1}`}
                           className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-200"
                         />
@@ -105,7 +182,7 @@ export function PhotoSelectionStep({
 
             {/* 우측: 촬영한 사진 2열 x 3행 사진 그리드 (516px) */}
             <div className="w-129 grid grid-cols-2 gap-4 shrink-0">
-              {capturedPhotos.map((photoUrl, index) => {
+              {capturedPhotos.map((photo, index) => {
                 const selectedOrder = selectedIndices.indexOf(index);
                 const isSelected = selectedOrder !== -1;
 
@@ -118,7 +195,7 @@ export function PhotoSelectionStep({
                     }`}
                   >
                     <img
-                      src={photoUrl}
+                      src={photo.dataUrl}
                       alt={`촬영 결과 ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -134,7 +211,7 @@ export function PhotoSelectionStep({
           <IconButton
             variant="primary"
             onClick={handleNextStep}
-            disabled={!isNextEnabled}
+            disabled={!isNextEnabled || isSubmitting}
             aria-label="다음 단계로 이동"
           >
             <RightArrowIcon className="w-8 h-8 text-green-200" />

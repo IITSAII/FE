@@ -67,3 +67,18 @@ export async function confirmPayment(
   );
   return data;
 }
+
+/**
+ * 세션 상태 조회. 현재 단계와 그 단계의 만료 시각(`stepExpiresAt`)을 반환한다.
+ * 실제 타이머 동기화의 유일한 근거로 사용된다.
+ */
+export async function getSessionStatus(
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<SessionStatusResponse> {
+  const { data } = await api.get<SessionStatusResponse>(
+    `/sessions/${sessionId}/status`,
+    { signal },
+  );
+  return data;
+}
