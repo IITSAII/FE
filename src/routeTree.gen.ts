@@ -14,6 +14,11 @@ import { Route as FailRouteImport } from './routes/fail'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as TestRouteImport } from './routes/test'
+import { Route as IntroIndexRouteImport } from './routes/intro.index'
+import { Route as IntroSessionIdRouteImport } from './routes/intro.$sessionId'
+import { Route as IntroSessionIdIndexRouteImport } from './routes/intro.$sessionId.index'
+import { Route as IntroSessionIdDownloadRouteImport } from './routes/intro.$sessionId.download'
+import { Route as IntroSessionIdLocationRouteImport } from './routes/intro.$sessionId.location'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,41 +45,108 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntroIndexRoute = IntroIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => IntroRoute,
+} as any)
+const IntroSessionIdRoute = IntroSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => IntroRoute,
+} as any)
+const IntroSessionIdIndexRoute = IntroSessionIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => IntroSessionIdRoute,
+} as any)
+const IntroSessionIdDownloadRoute = IntroSessionIdDownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => IntroSessionIdRoute,
+} as any)
+const IntroSessionIdLocationRoute = IntroSessionIdLocationRouteImport.update({
+  id: '/location',
+  path: '/location',
+  getParentRoute: () => IntroSessionIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/intro': typeof IntroRoute
+  '/intro': typeof IntroRouteWithChildren
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
+  '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
+  '/intro/': typeof IntroIndexRoute
+  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
+  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/intro': typeof IntroRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
+  '/intro': typeof IntroIndexRoute
+  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
+  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$sessionId': typeof IntroSessionIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/intro': typeof IntroRoute
+  '/intro': typeof IntroRouteWithChildren
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
+  '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
+  '/intro/': typeof IntroIndexRoute
+  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
+  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fail' | '/intro' | '/success' | '/test'
+  fullPaths:
+    | '/'
+    | '/fail'
+    | '/intro'
+    | '/success'
+    | '/test'
+    | '/intro/$sessionId'
+    | '/intro/'
+    | '/intro/$sessionId/download'
+    | '/intro/$sessionId/location'
+    | '/intro/$sessionId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fail' | '/intro' | '/success' | '/test'
-  id: '__root__' | '/' | '/fail' | '/intro' | '/success' | '/test'
+  to:
+    | '/'
+    | '/fail'
+    | '/success'
+    | '/test'
+    | '/intro'
+    | '/intro/$sessionId/download'
+    | '/intro/$sessionId/location'
+    | '/intro/$sessionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/fail'
+    | '/intro'
+    | '/success'
+    | '/test'
+    | '/intro/$sessionId'
+    | '/intro/'
+    | '/intro/$sessionId/download'
+    | '/intro/$sessionId/location'
+    | '/intro/$sessionId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FailRoute: typeof FailRoute
-  IntroRoute: typeof IntroRoute
+  IntroRoute: typeof IntroRouteWithChildren
   SuccessRoute: typeof SuccessRoute
   TestRoute: typeof TestRoute
 }
@@ -116,13 +188,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/intro/': {
+      id: '/intro/'
+      path: '/'
+      fullPath: '/intro/'
+      preLoaderRoute: typeof IntroIndexRouteImport
+      parentRoute: typeof IntroRoute
+    }
+    '/intro/$sessionId': {
+      id: '/intro/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/intro/$sessionId'
+      preLoaderRoute: typeof IntroSessionIdRouteImport
+      parentRoute: typeof IntroRoute
+    }
+    '/intro/$sessionId/': {
+      id: '/intro/$sessionId/'
+      path: '/'
+      fullPath: '/intro/$sessionId/'
+      preLoaderRoute: typeof IntroSessionIdIndexRouteImport
+      parentRoute: typeof IntroSessionIdRoute
+    }
+    '/intro/$sessionId/download': {
+      id: '/intro/$sessionId/download'
+      path: '/download'
+      fullPath: '/intro/$sessionId/download'
+      preLoaderRoute: typeof IntroSessionIdDownloadRouteImport
+      parentRoute: typeof IntroSessionIdRoute
+    }
+    '/intro/$sessionId/location': {
+      id: '/intro/$sessionId/location'
+      path: '/location'
+      fullPath: '/intro/$sessionId/location'
+      preLoaderRoute: typeof IntroSessionIdLocationRouteImport
+      parentRoute: typeof IntroSessionIdRoute
+    }
   }
 }
+
+interface IntroSessionIdRouteChildren {
+  IntroSessionIdDownloadRoute: typeof IntroSessionIdDownloadRoute
+  IntroSessionIdLocationRoute: typeof IntroSessionIdLocationRoute
+  IntroSessionIdIndexRoute: typeof IntroSessionIdIndexRoute
+}
+
+const IntroSessionIdRouteChildren: IntroSessionIdRouteChildren = {
+  IntroSessionIdDownloadRoute: IntroSessionIdDownloadRoute,
+  IntroSessionIdLocationRoute: IntroSessionIdLocationRoute,
+  IntroSessionIdIndexRoute: IntroSessionIdIndexRoute,
+}
+
+const IntroSessionIdRouteWithChildren = IntroSessionIdRoute._addFileChildren(
+  IntroSessionIdRouteChildren,
+)
+
+interface IntroRouteChildren {
+  IntroSessionIdRoute: typeof IntroSessionIdRouteWithChildren
+  IntroIndexRoute: typeof IntroIndexRoute
+}
+
+const IntroRouteChildren: IntroRouteChildren = {
+  IntroSessionIdRoute: IntroSessionIdRouteWithChildren,
+  IntroIndexRoute: IntroIndexRoute,
+}
+
+const IntroRouteWithChildren = IntroRoute._addFileChildren(IntroRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FailRoute: FailRoute,
-  IntroRoute: IntroRoute,
+  IntroRoute: IntroRouteWithChildren,
   SuccessRoute: SuccessRoute,
   TestRoute: TestRoute,
 }
