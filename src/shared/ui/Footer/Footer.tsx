@@ -21,7 +21,7 @@ const Footer = () => {
             <span>사업자등록번호</span>
             <span>595-40-01594</span>
             <span>|</span>
-            <span>대표 : 장지수, 최재영</span>
+            <span>대표 : 장지수</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span>세종특별자치시 조치원읍 섭골길 97 1층</span>
