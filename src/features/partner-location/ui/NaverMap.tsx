@@ -38,13 +38,17 @@ function loadNaverMapsScript(clientId: string): Promise<void> {
   if (window.naver?.maps) return Promise.resolve();
   if (naverScriptPromise) return naverScriptPromise;
 
-  naverScriptPromise = new Promise((resolve, reject) => {
+  naverScriptPromise = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=geocoder`;
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error("네이버 지도 스크립트 로드 실패"));
     document.head.appendChild(script);
+  }).catch((err) => {
+    // 실패한 프로미스를 캐시해두면 재시도가 불가능해지므로, 다음 호출이 새로 로드를 시도하게 한다.
+    naverScriptPromise = null;
+    throw err;
   });
 
   return naverScriptPromise;
