@@ -1,40 +1,181 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  CategoryTabs,
-  type CategoryTabItem,
-} from "../shared/ui/CategoryTabs/CategoryTabs";
+  QuantityStep,
+  type QuantityStepData,
+} from "../features/quantity/ui/QuantityStep";
+import { PaymentStep } from "../features/payment/ui/PaymentStep";
+import {
+  RelationStep,
+  type RelationStepData,
+} from "../features/relation/ui/RelationStep";
+import { PhotoStep, type PhotoStepData } from "../features/photo/ui/PhotoStep";
+import {
+  PhotoSelectionStep,
+  type PhotoSelectionStepData,
+} from "../features/photo-selection/ui/PhotoSelectionStep";
+import { FrameStep } from "../features/frame/ui/FrameStep";
+import { LoadingStep } from "../features/loading/ui/LoadingStep";
+
+export type FlowStep =
+  | "quantity"
+  | "payment"
+  | "relation"
+  | "photo"
+  | "select-photo"
+  | "frame"
+  | "loading";
 
 export const Route = createFileRoute("/")({
-  component: IndexPage,
+  component: SnapFlowPage,
 });
 
-const CATEGORIES: CategoryTabItem[] = [
-  { id: "majuhada", name: "마주하다" },
-  { id: "banjjak", name: "반짝" },
-  { id: "overnook", name: "overnook" },
-  { id: "itsai", name: "잇, 사이" },
-  { id: "pichimothan", name: "피치못한" },
-];
+function SnapFlowPage() {
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : null;
+  const requestedStep = (searchParams?.get("step") as FlowStep) || "quantity";
 
-function IndexPage() {
-  const [selectedCategoryId, setSelectedCategoryId] = useState("overnook");
+  const hasValidatedPaymentSession =
+    typeof window !== "undefined" &&
+    (() => {
+      const confirmedSessionId = sessionStorage.getItem(
+        "payment_confirmed_session_id",
+      );
+      const activeSessionId = sessionStorage.getItem("payment_session_id");
+      return (
+        Boolean(confirmedSessionId) && confirmedSessionId === activeSessionId
+      );
+    })();
+
+  const [quantityData, setQuantityData] = useState<QuantityStepData | null>(
+    null,
+  );
+
+  const postPaymentSteps: FlowStep[] = [
+    "relation",
+    "photo",
+    "select-photo",
+    "frame",
+    "loading",
+  ];
+  const isPostPaymentStep = postPaymentSteps.includes(requestedStep);
+  const initialStep: FlowStep =
+    isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession
+      ? "quantity"
+      : requestedStep;
+
+  const [currentStep, setCurrentStep] = useState<FlowStep>(initialStep);
+  const [relationData, setRelationData] = useState<RelationStepData | null>(
+    null,
+  );
+  const [photoData, setPhotoData] = useState<PhotoStepData | null>(null);
+  const [selectedPhotoData, setSelectedPhotoData] =
+    useState<PhotoSelectionStepData | null>(null);
+
+  const handleQuantityNext = (data: QuantityStepData) => {
+    setQuantityData(data);
+    setCurrentStep("payment");
+  };
+
+  const handlePaymentNext = () => {
+    setCurrentStep("relation");
+  };
+
+  const handleRelationNext = (data: RelationStepData) => {
+    setRelationData(data);
+    setCurrentStep("photo");
+  };
+
+  const handlePhotoNext = (data: PhotoStepData) => {
+    setPhotoData(data);
+    setCurrentStep("select-photo");
+  };
+
+  const handleSelectionNext = (data: PhotoSelectionStepData) => {
+    setSelectedPhotoData(data);
+    setCurrentStep("frame");
+  };
+
+  const handleFrameNext = () => {
+    setCurrentStep("loading");
+  };
+
+  const handleResetFlow = () => {
+    sessionStorage.removeItem("payment_session_id");
+    sessionStorage.removeItem("payment_confirmed_session_id");
+    setQuantityData(null);
+    setRelationData(null);
+    setPhotoData(null);
+    setSelectedPhotoData(null);
+    setCurrentStep("quantity");
+  };
+
+  const handleBackToQuantity = () => {
+    setCurrentStep("quantity");
+  };
+
+  const handleBackToPayment = () => {
+    setCurrentStep("payment");
+  };
+
+  const handleBackToRelation = () => {
+    setCurrentStep("relation");
+  };
+
+  const handleBackToPhoto = () => {
+    setCurrentStep("photo");
+  };
+
+  const handleBackToSelection = () => {
+    setCurrentStep("select-photo");
+  };
 
   return (
-    <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      {/* 데스크톱 등 대형 화면 접근 시에도 모바일 너비(max-w-[430px])로 중앙 정렬 */}
-      <main className="w-full max-w-[430px] mx-auto px-4.5 pt-16 pb-12 flex flex-col gap-4 box-border">
-        {/* 카테고리 탭 영역 */}
-        <CategoryTabs
-          categories={CATEGORIES}
-          selectedId={selectedCategoryId}
-          onSelectCategory={(id) => setSelectedCategoryId(id)}
-          className="px-0 pt-3"
+    <div className="w-full min-h-screen">
+      {currentStep === "quantity" && (
+        <QuantityStep onNext={handleQuantityNext} />
+      )}
+      {currentStep === "payment" && (
+        <PaymentStep
+          totalPrice={quantityData?.totalPrice}
+          personnelCount={quantityData?.personnelCount}
+          onNext={handlePaymentNext}
+          onBack={handleBackToQuantity}
         />
-
-        {/* 빈 카드 템플릿 영역 */}
-        <div className="w-full bg-white min-h-[480px] p-6 overflow-hidden" />
-      </main>
+      )}
+      {currentStep === "relation" && (
+        <RelationStep
+          onNext={handleRelationNext}
+          onBack={handleBackToPayment}
+        />
+      )}
+      {currentStep === "photo" && (
+        <PhotoStep
+          selectedRelationTitle={relationData?.selectedRelationTitle}
+          onNext={handlePhotoNext}
+          onBack={handleBackToRelation}
+        />
+      )}
+      {currentStep === "select-photo" && (
+        <PhotoSelectionStep
+          capturedPhotos={photoData?.photos}
+          onNext={handleSelectionNext}
+          onBack={handleBackToPhoto}
+        />
+      )}
+      {currentStep === "frame" && (
+        <FrameStep
+          selectedPhotos={selectedPhotoData?.selectedPhotos}
+          relationshipTitle={relationData?.selectedRelationTitle}
+          onNext={handleFrameNext}
+          onBack={handleBackToSelection}
+        />
+      )}
+      {currentStep === "loading" && (
+        <LoadingStep onComplete={handleResetFlow} />
+      )}
     </div>
   );
 }

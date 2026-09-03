@@ -4,7 +4,7 @@ import ImageIcon from "../../assets/icons/ImageIcon.svg?react";
 
 const Header = () => {
   const location = useLocation();
-  const isMobileRoute = location.pathname === "/";
+  const isMobileRoute = location.pathname === "/intro";
 
   return (
     <header className="fixed top-0 right-0 left-0 z-10">
@@ -15,12 +15,10 @@ const Header = () => {
             : "max-w-[834px] px-4.5 md:p-6"
         }`}
       >
-        <Logo className="w-[59.21px] h-6 text-green-500" />
-        {isMobileRoute && (
-          <Link to="/snap" aria-label="사진 촬영 시작하기" className="text-gray-900">
-            <ImageIcon className="w-6 h-6" />
-          </Link>
-        )}
+        <Link to="/" aria-label="첫 페이지로 돌아가기">
+          <Logo className="w-[59.21px] h-6 text-green-500" />
+        </Link>
+        {isMobileRoute && <ImageIcon className="w-6 h-6 text-gray-900" />}
       </div>
     </header>
   );

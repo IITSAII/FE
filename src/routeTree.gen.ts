@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FailRouteImport } from './routes/fail'
-import { Route as SnapRouteImport } from './routes/snap'
+import { Route as IntroRouteImport } from './routes/intro'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as TestRouteImport } from './routes/test'
 
@@ -25,9 +25,9 @@ const FailRoute = FailRouteImport.update({
   path: '/fail',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SnapRoute = SnapRouteImport.update({
-  id: '/snap',
-  path: '/snap',
+const IntroRoute = IntroRouteImport.update({
+  id: '/intro',
+  path: '/intro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuccessRoute = SuccessRouteImport.update({
@@ -44,14 +44,14 @@ const TestRoute = TestRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/snap': typeof SnapRoute
+  '/intro': typeof IntroRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/snap': typeof SnapRoute
+  '/intro': typeof IntroRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
 }
@@ -59,22 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
-  '/snap': typeof SnapRoute
+  '/intro': typeof IntroRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fail' | '/snap' | '/success' | '/test'
+  fullPaths: '/' | '/fail' | '/intro' | '/success' | '/test'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fail' | '/snap' | '/success' | '/test'
-  id: '__root__' | '/' | '/fail' | '/snap' | '/success' | '/test'
+  to: '/' | '/fail' | '/intro' | '/success' | '/test'
+  id: '__root__' | '/' | '/fail' | '/intro' | '/success' | '/test'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FailRoute: typeof FailRoute
-  SnapRoute: typeof SnapRoute
+  IntroRoute: typeof IntroRoute
   SuccessRoute: typeof SuccessRoute
   TestRoute: typeof TestRoute
 }
@@ -95,11 +95,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/snap': {
-      id: '/snap'
-      path: '/snap'
-      fullPath: '/snap'
-      preLoaderRoute: typeof SnapRouteImport
+    '/intro': {
+      id: '/intro'
+      path: '/intro'
+      fullPath: '/intro'
+      preLoaderRoute: typeof IntroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/success': {
@@ -122,7 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FailRoute: FailRoute,
-  SnapRoute: SnapRoute,
+  IntroRoute: IntroRoute,
   SuccessRoute: SuccessRoute,
   TestRoute: TestRoute,
 }
