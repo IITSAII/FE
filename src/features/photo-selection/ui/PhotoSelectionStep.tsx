@@ -87,13 +87,16 @@ export function PhotoSelectionStep({
       .filter((id): id is number => id != null);
 
     try {
-      if (photoIds.length === maxSelectCount) {
-        await selectPhotos(sessionId, photoIds);
-      } else {
-        console.error("일부 사진의 photoId가 없어 선택 저장을 건너뜁니다.");
+      if (photoIds.length !== maxSelectCount) {
+        throw new Error("일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.");
       }
+      await selectPhotos(sessionId, photoIds);
     } catch (err) {
       console.error("사진 선택 저장 실패:", err);
+      hasSubmittedRef.current = false;
+      setIsSubmitting(false);
+      alert("사진 선택 저장에 실패했습니다. 다시 시도해주세요.");
+      return;
     }
 
     onNext?.({ selectedPhotos });
