@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
+import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { getAssignedPartner, type AssignedPartner } from "../api/partnerApi";
 import { getPartnerLocationVariant } from "../lib/partnerMatch";
@@ -57,13 +57,13 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
       <main className="w-full max-w-[430px] mx-auto flex flex-col box-border">
         {/* 헤더: 뒤로가기 + 타이틀 */}
-        <div className="w-full flex items-center justify-between bg-iphone-background border-b border-gray-100 px-4.5 py-3">
+        <div className=" w-full flex items-center justify-between bg-iphone-background border-b border-gray-100 px-4.5 py-3">
           <Link
             to="/intro/$sessionId"
             params={{ sessionId }}
             aria-label="이전 화면으로 이동"
           >
-            <LeftArrowIcon className="w-6 h-6 text-gray-900" />
+            <LeftChevronIcon className="w-6 h-6 text-gray-900" />
           </Link>
           <p className="text-iphone-heading-2-medium text-black">
             {partnerName ? `${partnerName} 위치보기` : "위치보기"}

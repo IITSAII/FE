@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { Button } from "../../../shared/ui/Button/Button";
-import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
+import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { getPrintInfo } from "../../frame/api/printApi";
 
@@ -31,7 +30,8 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
       setState({ status: "loading" });
       try {
         const info = await getPrintInfo(sessionId, controller.signal);
-        if (isMounted) setState({ status: "ready", finalImageUrl: info.finalImageUrl });
+        if (isMounted)
+          setState({ status: "ready", finalImageUrl: info.finalImageUrl });
       } catch (err) {
         if (isApiError(err) && err.code === "CANCELED") return;
         const message =
@@ -76,53 +76,60 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[430px] mx-auto px-4.5 pt-16 pb-12 flex flex-col gap-6 box-border">
+      <main className="w-full max-w-[430px] mx-auto px-4.5 pb-12 gap-6 flex flex-col box-border">
         {/* 상단: 뒤로가기 + 타이틀 */}
-        <div className="w-full flex items-center gap-3">
-          <Link to="/intro/$sessionId" params={{ sessionId }}>
-            <IconButton
-              variant="outline"
-              type="button"
-              aria-label="이전 화면으로 이동"
-            >
-              <LeftArrowIcon className="w-6 h-6 text-gray-500" />
-            </IconButton>
+        <div className="w-full flex items-center justify-center relative py-3 border-b border-gray-100">
+          <Link
+            to="/intro/$sessionId"
+            params={{ sessionId }}
+            className="absolute left-0"
+          >
+            <LeftChevronIcon className="w-6 h-6 text-gray-500" />
           </Link>
           <h1 className="text-iphone-heading-2-medium text-black">
             사진 저장하기
           </h1>
         </div>
 
-        {/* 프레임 프리뷰 */}
-        <div className="w-full min-h-[420px] bg-white flex items-center justify-center overflow-hidden">
-          {state.status === "loading" && (
-            <p className="text-iphone-body-1-light text-gray-500">
-              불러오는 중...
-            </p>
-          )}
-          {state.status === "error" && (
-            <p className="text-iphone-body-1-light text-gray-500 text-center px-6">
-              {state.message}
-            </p>
-          )}
-          {state.status === "ready" && (
-            <img
-              src={state.finalImageUrl}
-              alt="완성된 네컷 사진 프레임"
-              className="w-full h-auto object-contain"
-            />
-          )}
-        </div>
+        <div className="w-full flex flex-col gap-4">
+          <span className="text-iphone-body-1-regular text-black">
+            {/* 사진 찍은 날짜 */}
+            2026. 05. 20
+          </span>
 
-        {/* 다운로드 버튼 */}
-        <Button
-          variant="dark"
-          size="block"
-          onClick={handleDownload}
-          disabled={state.status !== "ready" || isDownloading}
-        >
-          {isDownloading ? "다운로드 중..." : "Download"}
-        </Button>
+          <div className="w-full flex flex-col gap-9">
+            {/* 프레임 프리뷰 */}
+            <div className="w-full min-h-[500px] bg-white flex items-center justify-center overflow-hidden">
+              {state.status === "loading" && (
+                <p className="text-iphone-body-1-light text-gray-500">
+                  불러오는 중...
+                </p>
+              )}
+              {state.status === "error" && (
+                <p className="text-iphone-body-1-light text-gray-500 text-center px-6">
+                  {state.message}
+                </p>
+              )}
+              {state.status === "ready" && (
+                <img
+                  src={state.finalImageUrl}
+                  alt="완성된 네컷 사진 프레임"
+                  className="w-full h-auto object-contain"
+                />
+              )}
+            </div>
+
+            {/* 다운로드 버튼 */}
+            <Button
+              variant="dark"
+              size="block"
+              onClick={handleDownload}
+              disabled={state.status !== "ready" || isDownloading}
+            >
+              {isDownloading ? "다운로드 중..." : "Download"}
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
