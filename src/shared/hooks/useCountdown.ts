@@ -34,10 +34,12 @@ export function useCountdown({
   const [secondsLeft, setSecondsLeft] = useState(0);
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
+  // 이미 onExpire를 호출한 targetMs를 기억해, enabled가 꺼졌다 다시 켜져도(예: 제출 실패 후
+  // 재시도 가능 상태로 복귀) 같은 만료 시각에 대해 onExpire가 중복 호출되지 않도록 한다.
+  const firedTargetMsRef = useRef<number | null>(null);
 
   useEffect(() => {
     const durationStartMs = Date.now();
-    let hasExpired = false;
 
     const getTargetMs = () => {
       if (expiresAt) {
@@ -60,8 +62,8 @@ export function useCountdown({
     const tick = () => {
       const remaining = secondsUntil(targetMs);
       setSecondsLeft(remaining);
-      if (remaining <= 0 && !hasExpired) {
-        hasExpired = true;
+      if (remaining <= 0 && firedTargetMsRef.current !== targetMs) {
+        firedTargetMsRef.current = targetMs;
         onExpireRef.current?.();
       }
     };
