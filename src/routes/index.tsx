@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { IntroStep } from "../features/intro/ui/IntroStep";
 import {
   QuantityStep,
   type QuantityStepData,
@@ -18,6 +19,7 @@ import { FrameStep } from "../features/frame/ui/FrameStep";
 import { LoadingStep } from "../features/loading/ui/LoadingStep";
 
 export type FlowStep =
+  | "intro"
   | "quantity"
   | "payment"
   | "relation"
@@ -35,7 +37,7 @@ function SnapFlowPage() {
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
       : null;
-  const requestedStep = (searchParams?.get("step") as FlowStep) || "quantity";
+  const requestedStep = (searchParams?.get("step") as FlowStep) || "intro";
 
   const hasValidatedPaymentSession =
     typeof window !== "undefined" &&
@@ -74,6 +76,10 @@ function SnapFlowPage() {
   const [selectedPhotoData, setSelectedPhotoData] =
     useState<PhotoSelectionStepData | null>(null);
 
+  const handleIntroNext = () => {
+    setCurrentStep("quantity");
+  };
+
   const handleQuantityNext = (data: QuantityStepData) => {
     setQuantityData(data);
     setCurrentStep("payment");
@@ -109,7 +115,7 @@ function SnapFlowPage() {
     setRelationData(null);
     setPhotoData(null);
     setSelectedPhotoData(null);
-    setCurrentStep("quantity");
+    setCurrentStep("intro");
   };
 
   const handleBackToQuantity = () => {
@@ -134,6 +140,7 @@ function SnapFlowPage() {
 
   return (
     <div className="w-full min-h-screen">
+      {currentStep === "intro" && <IntroStep onNext={handleIntroNext} />}
       {currentStep === "quantity" && (
         <QuantityStep onNext={handleQuantityNext} />
       )}
