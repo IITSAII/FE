@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   PhotoFrame,
   type PhotoFrameVariant,
@@ -8,6 +8,11 @@ import {
 import Logo from "../../../shared/assets/icons/Logo/Logo.svg?react";
 import SlashIcon from "../../../shared/assets/icons/SlashIcon.svg?react";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
+import { useCountdown } from "../../../shared/hooks/useCountdown";
+import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
+import { buildGalleryUrl } from "../../../shared/lib/qrCode";
+import { selectFrame } from "../api/printApi";
+import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
 
 export interface FrameStepData {
@@ -17,7 +22,8 @@ export interface FrameStepData {
 }
 
 export interface FrameStepProps {
-  selectedPhotos?: string[];
+  sessionId: string;
+  selectedPhotos?: CapturedPhoto[];
   relationshipTitle?: string | null;
   onNext?: (data: FrameStepData) => void;
   onBack?: () => void;
@@ -36,6 +42,7 @@ export const THEME_CATEGORIES = [
  * - 다크/라이트 색상 및 4가지 프레임 테마(피치못한, 마주하다, 오버눅, 반짝)를 선택합니다.
  */
 export function FrameStep({
+  sessionId,
   selectedPhotos = [],
   relationshipTitle,
   onNext,
@@ -43,12 +50,50 @@ export function FrameStep({
   const [variant, setVariant] = useState<PhotoFrameVariant>("dark");
   const [selectedThemeId] = useState<PhotoFrameTheme>("pichimothan");
   const [filter, setFilter] = useState<PhotoFilter>("default");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const hasSubmittedRef = useRef(false);
+
+  const { status } = useStepExpiry(sessionId);
+  const photoUrls = selectedPhotos.map((photo) => photo.dataUrl);
+  const qrCodeUrl = buildGalleryUrl(sessionId);
+
+  const proceed = async () => {
+    if (hasSubmittedRef.current) return;
+    hasSubmittedRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      await selectFrame(sessionId, {
+        frameType: variant.toUpperCase() as "DARK" | "LIGHT",
+        filterBw: filter === "grayscale",
+        filterBrightness: 0,
+      });
+    } catch (err) {
+      console.error("프레임 선택 저장 실패:", err);
+      hasSubmittedRef.current = false;
+      setIsSubmitting(false);
+      setSubmitError("프레임 선택 저장에 실패했습니다. 다시 시도해주세요.");
+      return;
+    }
+
+    onNext?.({ variant, theme: selectedThemeId, filter });
+  };
 
   const handleNextStep = () => {
-    if (onNext) {
-      onNext({ variant, theme: selectedThemeId, filter });
-    }
+    proceed();
   };
+
+  const handleExpire = () => {
+    // 만료 시 마지막으로 선택해둔(또는 기본값인) variant/theme/filter 그대로 진행한다.
+    proceed();
+  };
+
+  const { secondsLeft } = useCountdown({
+    expiresAt: status?.stepExpiresAt,
+    enabled: status?.stepExpiresAt != null && !isSubmitting,
+    onExpire: handleExpire,
+  });
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
@@ -56,7 +101,11 @@ export function FrameStep({
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">100</span>
+          {status?.stepExpiresAt && (
+            <span className="text-ipad-heading-1-medium text-gray-600">
+              {secondsLeft}
+            </span>
+          )}
         </div>
 
         {/* 타이틀 영역 */}
@@ -65,7 +114,7 @@ export function FrameStep({
             프레임을 정해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            프레임 및 필터도 조정할 수 있어요.
+            {submitError ?? "프레임 및 필터도 조정할 수 있어요."}
           </p>
         </div>
 
@@ -77,9 +126,10 @@ export function FrameStep({
               <PhotoFrame
                 variant={variant}
                 theme={selectedThemeId}
-                photos={selectedPhotos}
+                photos={photoUrls}
                 relationship={relationshipTitle || "Friend"}
                 date="2026.05.16"
+                qrCodeUrl={qrCodeUrl}
                 filter={filter}
               />
             </div>
@@ -180,6 +230,7 @@ export function FrameStep({
           <IconButton
             variant="primary"
             onClick={handleNextStep}
+            disabled={isSubmitting}
             aria-label="다음 단계로 이동"
           >
             <RightArrowIcon className="w-8 h-8 text-green-200" />

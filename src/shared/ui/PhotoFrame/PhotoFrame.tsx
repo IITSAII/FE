@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../lib/utils";
+import { QrCode } from "../QrCode/QrCode";
 import Logo from "../../assets/icons/Logo/Logo.svg?react";
 import VerticalLogo from "../../assets/icons/Logo/VerticalLogo.svg?react";
 import PichimothanLogo from "../../assets/icons/Logo/PichimothanLogo.svg?react";
@@ -126,7 +127,21 @@ export function PhotoFrame({
             <ScanLabelIcon />
 
             {/* 하단 QR 코드 박스 */}
-            <div className="size-18.25 bg-black"></div>
+            {qrCodeUrl ? (
+              isDark ? (
+                <QrCode url={qrCodeUrl} size={73} className="size-18.25" />
+              ) : (
+                <QrCode
+                  url={qrCodeUrl}
+                  size={73}
+                  backgroundColor="#F9F5ED"
+                  dotsColor="#4ca858"
+                  className="size-18.25"
+                />
+              )
+            ) : (
+              <div className="size-18.25 bg-black" />
+            )}
           </div>
         </div>
       </div>
