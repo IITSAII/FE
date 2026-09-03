@@ -33,6 +33,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
   useEffect(() => {
     if (!sessionId) return;
 
+    setPartner(null);
     let isMounted = true;
     const controller = new AbortController();
 
