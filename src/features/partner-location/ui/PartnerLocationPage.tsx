@@ -93,7 +93,10 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
                   />
                 </div>
               ) : (
-                <PartnerRouteMap variant={variant} />
+                <PartnerRouteMap
+                  variant={variant}
+                  locationLabel={`${state.partner.name} (${state.partner.location})`}
+                />
               );
             })()}
         </div>

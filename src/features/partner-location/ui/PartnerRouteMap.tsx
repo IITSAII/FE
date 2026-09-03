@@ -11,6 +11,8 @@ const ASSETS: Record<"pichimothan" | "banjjak", { map: string; arrow: string }> 
 
 export interface PartnerRouteMapProps {
   variant: Extract<PartnerLocationVariant, "pichimothan" | "banjjak">;
+  /** 지도 이미지의 대체 텍스트에 사용할 배정 업체명/위치 설명 */
+  locationLabel: string;
 }
 
 /**
@@ -21,14 +23,14 @@ export interface PartnerRouteMapProps {
  * 넘치는 아래쪽은 잘라낸다. 실제 화면에서 화살표가 지도 핀과 어긋나 보이면 아래 top/scale 값을
  * 조정해야 한다.
  */
-export function PartnerRouteMap({ variant }: PartnerRouteMapProps) {
+export function PartnerRouteMap({ variant, locationLabel }: PartnerRouteMapProps) {
   const { map, arrow } = ASSETS[variant];
 
   return (
     <div className="relative w-full aspect-[366/620] overflow-hidden bg-white">
       <img
         src={map}
-        alt=""
+        alt={`${locationLabel} 위치 안내 지도`}
         className="absolute inset-0 w-full h-full object-cover"
       />
       <img
