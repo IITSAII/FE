@@ -56,6 +56,9 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
     try {
       const response = await fetch(state.finalImageUrl);
+      if (!response.ok) {
+        throw new Error(`이미지 요청 실패 (status: ${response.status})`);
+      }
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
 
@@ -65,7 +68,8 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+      // 브라우저가 blob을 읽기 시작할 시간을 준 뒤 해제한다(즉시 해제 시 다운로드가 끊길 수 있음).
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
       console.error("이미지 다운로드 실패, 새 탭에서 열기로 대체합니다:", err);
       window.open(state.finalImageUrl, "_blank", "noopener,noreferrer");
