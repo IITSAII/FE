@@ -1,6 +1,8 @@
 /** `canvas.toDataURL()` 결과 문자열을 서버 업로드용 `Blob`으로 변환한다. */
 export function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(",");
+  if (!header || !base64) return new Blob();
+
   const mimeMatch = header.match(/data:(.*?);base64/);
   const mime = mimeMatch?.[1] ?? "image/png";
 
