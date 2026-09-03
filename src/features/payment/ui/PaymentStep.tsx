@@ -160,50 +160,60 @@ export function PaymentStep({
           </p>
         </div>
 
-        {/* 결제 영수증 카드 */}
-        <div className="w-full flex flex-col items-center gap-17.5 my-auto">
-          <Card className="max-w-155.75 px-[61.5px] py-[61.88px] gap-2">
-            <div className="w-full flex flex-col gap-12.5">
-              <div className="w-full flex flex-col gap-7 text-ipad-heading-3-medium text-black">
-                <div className="flex items-center justify-between">
-                  <span>상품 금액</span>
-                  <span className="font-poppins">
+        <div className="flex items-center justify-center gap-20 w-full">
+          {/* 임시 프레임 */}
+          <div className="w-36.5 h-109.25 flex flex-col gap-[2.26px] bg-frame-dark/80">
+            <div className="w-[119.96px] h-[82.48px] bg-gray-100" />
+            <div className="w-[119.96px] h-[82.48px] bg-gray-100" />
+            <div className="w-[119.96px] h-[82.48px] bg-gray-100" />
+            <div className="w-[119.96px] h-[82.48px] bg-gray-100" />
+          </div>
+
+          {/* 결제 영수증 카드 */}
+          <div className="w-106.75 flex flex-col items-center gap-10 my-auto">
+            <Card className="w-full px-[61.5px] py-[61.88px] gap-2">
+              <div className="w-full flex flex-col gap-12.5">
+                <div className="w-full flex flex-col gap-7 text-ipad-heading-3-medium text-black">
+                  <div className="flex items-center justify-between">
+                    <span>상품 금액</span>
+                    <span className="font-poppins">
+                      ₩ {resolvedAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>상품 수량</span>
+                    <span>{personnelCount}장</span>
+                  </div>
+                </div>
+
+                <div className="w-full flex items-center justify-between border-t border-gray-100 pt-2">
+                  <span className="text-ipad-heading-2-medium text-black">
+                    총 결제 금액
+                  </span>
+                  <span className="text-ipad-heading-3-medium text-green-500 font-poppins">
                     ₩ {resolvedAmount.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span>상품 수량</span>
-                  <span>{personnelCount}장</span>
-                </div>
               </div>
 
-              <div className="w-full flex items-center justify-between border-t border-gray-100 pt-2">
-                <span className="text-ipad-heading-2-medium text-black">
-                  총 결제 금액
-                </span>
-                <span className="text-ipad-heading-3-medium text-green-500 font-poppins">
-                  ₩ {resolvedAmount.toLocaleString()}
-                </span>
-              </div>
-            </div>
+              {errorMessage && (
+                <p className="text-red-500 text-center text-sm pt-2">
+                  {errorMessage}
+                </p>
+              )}
+            </Card>
 
-            {errorMessage && (
-              <p className="text-red-500 text-center text-sm pt-2">
-                {errorMessage}
-              </p>
-            )}
-          </Card>
-
-          <Button
-            variant="dark"
-            onClick={handlePayment}
-            disabled={isLoading || !widgets || !sessionId}
-            className="w-full rounded-[8px] py-4 text-ipad-heading-2-medium text-green-200 max-w-155.75"
-          >
-            {isLoading
-              ? "결제 정보 준비 중..."
-              : `${resolvedAmount.toLocaleString()}원 결제하기`}
-          </Button>
+            <Button
+              variant="dark"
+              onClick={handlePayment}
+              disabled={isLoading || !widgets || !sessionId}
+              className="w-full rounded-[8px] py-4 text-ipad-heading-2-medium text-green-200 max-w-106.75"
+            >
+              {isLoading
+                ? "결제 정보 준비 중..."
+                : `${resolvedAmount.toLocaleString()}원 결제하기`}
+            </Button>
+          </div>
         </div>
 
         {/* 결제 CTA 및 뒤로가기 */}
