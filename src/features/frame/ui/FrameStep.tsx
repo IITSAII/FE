@@ -51,6 +51,7 @@ export function FrameStep({
   const [selectedThemeId] = useState<PhotoFrameTheme>("pichimothan");
   const [filter, setFilter] = useState<PhotoFilter>("default");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const hasSubmittedRef = useRef(false);
 
   const { status } = useStepExpiry(sessionId);
@@ -70,6 +71,10 @@ export function FrameStep({
       });
     } catch (err) {
       console.error("프레임 선택 저장 실패:", err);
+      hasSubmittedRef.current = false;
+      setIsSubmitting(false);
+      setSubmitError("프레임 선택 저장에 실패했습니다. 다시 시도해주세요.");
+      return;
     }
 
     onNext?.({ variant, theme: selectedThemeId, filter });
@@ -96,9 +101,11 @@ export function FrameStep({
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">
-            {secondsLeft}
-          </span>
+          {status?.stepExpiresAt && (
+            <span className="text-ipad-heading-1-medium text-gray-600">
+              {secondsLeft}
+            </span>
+          )}
         </div>
 
         {/* 타이틀 영역 */}
@@ -107,7 +114,7 @@ export function FrameStep({
             프레임을 정해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            프레임 및 필터도 조정할 수 있어요.
+            {submitError ?? "프레임 및 필터도 조정할 수 있어요."}
           </p>
         </div>
 

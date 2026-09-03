@@ -40,7 +40,10 @@ export function useCountdown({
     let hasExpired = false;
 
     const getTargetMs = () => {
-      if (expiresAt) return new Date(expiresAt).getTime();
+      if (expiresAt) {
+        const parsed = new Date(expiresAt).getTime();
+        if (!Number.isNaN(parsed)) return parsed;
+      }
       if (durationSeconds != null) return durationStartMs + durationSeconds * 1000;
       return null;
     };

@@ -190,9 +190,11 @@ export function PaymentStep({
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">
-            {secondsLeft}
-          </span>
+          {stepExpiresAt && (
+            <span className="text-ipad-heading-1-medium text-gray-600">
+              {secondsLeft}
+            </span>
+          )}
         </div>
 
         {/* 타이틀 영역 */}

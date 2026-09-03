@@ -59,6 +59,7 @@ const RELATION_OPTIONS: RelationOption[] = [
 export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const hasSubmittedRef = useRef(false);
 
   const { status } = useStepExpiry(sessionId);
@@ -88,6 +89,10 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
       );
     } catch (err) {
       console.error("관계 선택 제출 실패:", err);
+      hasSubmittedRef.current = false;
+      setIsSubmitting(false);
+      setSubmitError("관계 선택 저장에 실패했습니다. 다시 시도해주세요.");
+      return;
     }
 
     onNext?.({
@@ -118,9 +123,11 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
       <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
-          <span className="text-ipad-heading-1-medium text-gray-600">
-            {secondsLeft}
-          </span>
+          {status?.stepExpiresAt && (
+            <span className="text-ipad-heading-1-medium text-gray-600">
+              {secondsLeft}
+            </span>
+          )}
         </div>
 
         {/* 타이틀 영역 */}
@@ -129,7 +136,7 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
             오늘의 관계를 선택해주세요 !
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            선택한 사이에 맞춰 포즈 미션이 달라져요.
+            {submitError ?? "선택한 사이에 맞춰 포즈 미션이 달라져요."}
           </p>
         </div>
 
