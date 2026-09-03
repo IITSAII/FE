@@ -14,7 +14,7 @@ function FailPage() {
   const message = searchParams.get("message");
 
   const handleRetry = () => {
-    navigate({ to: "/snap", search: { step: "quantity" } as any });
+    navigate({ to: "/", search: { step: "quantity" } });
   };
 
   return (

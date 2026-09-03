@@ -82,7 +82,7 @@ function SuccessPage() {
   }, [paymentKey, sessionId, amount]);
 
   const handleNextStep = () => {
-    navigate({ to: "/snap", search: { step: "relation" } as any });
+    navigate({ to: "/", search: { step: "relation" } });
   };
 
   useEffect(() => {
