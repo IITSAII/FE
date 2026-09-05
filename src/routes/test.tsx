@@ -9,6 +9,7 @@ import { CategoryTab } from "../shared/ui/CategoryTabs/CategoryTab";
 import { IconButton } from "../shared/ui/IconButton/IconButton";
 import { Modal } from "../shared/ui/Modal/Modal";
 import { PhotoFrame } from "../shared/ui/PhotoFrame/PhotoFrame";
+import { JobokFrame } from "../shared/ui/PhotoFrame/JobokFrame";
 import { useModal } from "../shared/hooks/useModal";
 import PlusIcon from "../shared/assets/icons/PlusIcon.svg?react";
 import MinusIcon from "../shared/assets/icons/MinusIcon.svg?react";
@@ -656,7 +657,51 @@ function SharedUITestPage() {
             </div>
           </div>
         </section>
+
+        {/* 7. JobokFrame (조복 SVG 사진 프레임: 컬러 & 흑백) */}
+        <section className="bg-white p-6 rounded-xl border border-gray-200 space-y-6">
+          <h2 className="text-heading-1-semibold text-gray-900 border-b border-gray-100 pb-2">
+            7. JobokFrame (조복 SVG 사진 프레임: 컬러 & 흑백)
+          </h2>
+          <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
+            <div className="flex flex-col items-center gap-2">
+              <JobokFrame
+                variant="light"
+                photos={SAMPLE_PHOTOS}
+                qrCodeUrl="https://example.com"
+                date="2026.05.16"
+              />
+              <span className="text-xs text-gray-500 font-medium">
+                Color (variant=light)
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <JobokFrame
+                variant="dark"
+                photos={SAMPLE_PHOTOS}
+                qrCodeUrl="https://example.com"
+                date="2026.05.16"
+                filter="grayscale"
+              />
+              <span className="text-xs text-gray-500 font-medium">
+                Mono (variant=dark)
+              </span>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
 }
+
+function samplePhotoDataUrl(color: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="${color}"/></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+const SAMPLE_PHOTOS = [
+  samplePhotoDataUrl("#F6B8B8"),
+  samplePhotoDataUrl("#B8D9F6"),
+  samplePhotoDataUrl("#C8F6B8"),
+  samplePhotoDataUrl("#F6E4B8"),
+];
