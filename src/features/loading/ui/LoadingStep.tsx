@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   PhotoFrame,
   type PhotoFrameVariant,
@@ -9,7 +9,6 @@ import { JobokFrame } from "../../../shared/ui/PhotoFrame/JobokFrame";
 import { QrCode } from "../../../shared/ui/QrCode/QrCode";
 import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
-import { formatFrameDate } from "../../../shared/lib/date";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
 import type { FrameDesign } from "../../frame/ui/FrameStep";
@@ -22,6 +21,7 @@ export interface LoadingStepProps {
   variant?: PhotoFrameVariant;
   theme?: PhotoFrameTheme;
   filter?: PhotoFilter;
+  date: string;
   onComplete?: () => void;
   onBack?: () => void;
 }
@@ -47,6 +47,7 @@ export function LoadingStep({
   variant = "dark",
   theme = "pichimothan",
   filter = "default",
+  date,
   onComplete,
   onBack,
 }: LoadingStepProps) {
@@ -59,7 +60,6 @@ export function LoadingStep({
   const uploadStartedRef = useRef(false);
 
   const qrCodeUrl = buildGalleryUrl(sessionId);
-  const frameDate = useMemo(() => formatFrameDate(), []);
 
   useEffect(() => {
     if (progress >= 100) return;
@@ -123,7 +123,7 @@ export function LoadingStep({
             <JobokFrame
               variant={variant}
               photos={photos}
-              date={frameDate}
+              date={date}
               qrCodeUrl={qrCodeUrl}
               filter={filter}
             />
@@ -133,7 +133,7 @@ export function LoadingStep({
               theme={theme}
               photos={photos}
               relationship={relationshipTitle || "Friend"}
-              date={frameDate}
+              date={date}
               qrCodeUrl={qrCodeUrl}
               filter={filter}
             />

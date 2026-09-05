@@ -26,6 +26,7 @@ export interface FrameStepData {
   variant: PhotoFrameVariant;
   theme: PhotoFrameTheme;
   filter: PhotoFilter;
+  date: string;
 }
 
 export interface FrameStepProps {
@@ -94,7 +95,7 @@ export function FrameStep({
       return;
     }
 
-    onNext?.({ design, variant, theme: selectedThemeId, filter });
+    onNext?.({ design, variant, theme: selectedThemeId, filter, date: frameDate });
   };
 
   const handleNextStep = () => {
