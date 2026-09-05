@@ -12,7 +12,13 @@ export interface FrameDownloadPageProps {
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; finalImageUrl: string };
+  | { status: "ready"; finalImageUrl: string; capturedAt: string };
+
+/** ISO 날짜 문자열("YYYY-MM-DD")을 "YYYY. MM. DD" 형식으로 변환한다. */
+function formatCapturedAt(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${year}. ${month}. ${day}`;
+}
 
 /**
  * QR로 진입해 사진 아이콘 버튼을 눌렀을 때 보이는, 완성된 프레임 이미지를 다운로드하는 화면.
@@ -31,7 +37,11 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
       try {
         const info = await getPrintInfo(sessionId, controller.signal);
         if (isMounted)
-          setState({ status: "ready", finalImageUrl: info.finalImageUrl });
+          setState({
+            status: "ready",
+            finalImageUrl: info.finalImageUrl,
+            capturedAt: info.capturedAt,
+          });
       } catch (err) {
         if (isApiError(err) && err.code === "CANCELED") return;
         const message =
@@ -97,8 +107,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
         <div className="w-full flex flex-col gap-4">
           <span className="text-iphone-body-1-regular text-black">
-            {/* 사진 찍은 날짜 */}
-            2026. 05. 20
+            {state.status === "ready" ? formatCapturedAt(state.capturedAt) : ""}
           </span>
 
           <div className="w-full flex flex-col gap-9">

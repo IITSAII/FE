@@ -50,6 +50,81 @@ const DEFAULT_MISSIONS = [
   },
 ];
 
+// 아이패드 등에서 기본으로 잡히는 초광각(Ultra Wide) 렌즈 명칭 패턴
+const ULTRA_WIDE_LABEL_PATTERN = /ultra ?wide|울트라|초광각/i;
+
+// zoom 트랙 제약은 표준 TS DOM 타입에 없는 실험적(Safari) 속성이라 별도 타입으로 취급
+type ZoomCapableTrack = {
+  getCapabilities?: () => MediaTrackCapabilities & { zoom?: { min: number; max: number } };
+  applyConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
+};
+
+// 초광각 렌즈로 잡힌 트랙에 한해 확대(zoom)를 적용해 왜곡을 줄인다 (지원하는 브라우저에서만 동작)
+function applyZoomIfSupported(track: MediaStreamTrack) {
+  const zoomTrack = track as unknown as ZoomCapableTrack;
+  const zoomCapability = zoomTrack.getCapabilities?.()?.zoom;
+  if (!zoomCapability) return;
+
+  const targetZoom = Math.min(zoomCapability.max, Math.max(zoomCapability.min, 2));
+  zoomTrack
+    .applyConstraints({ advanced: [{ zoom: targetZoom } as MediaTrackConstraintSet] })
+    .catch((err) => console.warn("카메라 줌 조정 실패:", err));
+}
+
+// 전면 카메라가 초광각으로 잡힌 경우, 초광각이 아닌 다른 전면 카메라로 재연결을 시도한다.
+// 대체 카메라가 없으면 zoom 제약으로 왜곡만 완화하고 기존 스트림을 그대로 사용한다.
+async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
+  const currentTrack = stream.getVideoTracks()[0];
+  if (!currentTrack) return stream;
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = devices.filter((d) => d.kind === "videoinput");
+
+    const currentDeviceId = currentTrack.getSettings().deviceId;
+    const currentDevice = videoInputs.find((d) => d.deviceId === currentDeviceId);
+
+    const currentIsUltraWide = ULTRA_WIDE_LABEL_PATTERN.test(currentDevice?.label ?? "");
+    if (!currentIsUltraWide) {
+      return stream;
+    }
+
+    const candidates = videoInputs.filter(
+      (d) => d.deviceId !== currentDeviceId && !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
+    );
+
+    for (const candidate of candidates) {
+      try {
+        const candidateStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: candidate.deviceId },
+            facingMode: { exact: "user" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        const candidateTrack = candidateStream.getVideoTracks()[0];
+        if (candidateTrack?.getSettings().facingMode === "user") {
+          stream.getTracks().forEach((track) => track.stop());
+          return candidateStream;
+        }
+
+        candidateStream.getTracks().forEach((track) => track.stop());
+      } catch (err) {
+        console.warn("대체 카메라 연결 실패:", err);
+      }
+    }
+
+    applyZoomIfSupported(currentTrack);
+    return stream;
+  } catch (err) {
+    console.warn("메인 카메라 선택 실패, 기본 카메라를 사용합니다:", err);
+    return stream;
+  }
+}
+
 /**
  * 사진 촬영 플로우 단계 컴포넌트 (PhotoStep)
  * - 웹캠 카메라 화면과 연결하여 실시간 미션 및 6장 자동 촬영을 진행합니다.
@@ -108,9 +183,16 @@ export function PhotoStep({
           return;
         }
 
-        streamRef.current = stream;
+        const preferredStream = await preferMainCamera(stream);
+
+        if (!isMounted) {
+          preferredStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = preferredStream;
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = preferredStream;
         }
       } catch (err) {
         if (isMounted) {

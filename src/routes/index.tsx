@@ -17,6 +17,7 @@ import {
 } from "../features/photo-selection/ui/PhotoSelectionStep";
 import { FrameStep, type FrameStepData } from "../features/frame/ui/FrameStep";
 import { LoadingStep } from "../features/loading/ui/LoadingStep";
+import { formatFrameDate } from "../shared/lib/date";
 
 export type FlowStep =
   | "intro"
@@ -202,9 +203,11 @@ function SnapFlowPage() {
             (photo) => photo.dataUrl,
           )}
           relationshipTitle={relationData?.selectedRelationTitle}
+          design={frameData?.design}
           variant={frameData?.variant}
           theme={frameData?.theme}
           filter={frameData?.filter}
+          date={frameData?.date ?? formatFrameDate()}
           onComplete={handleResetFlow}
           onBack={handleResetFlow}
         />
