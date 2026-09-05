@@ -1,6 +1,6 @@
 import { api } from "../../../shared/lib/axios";
 
-export type FrameType = "DARK" | "LIGHT";
+export type FrameType = "DARK" | "LIGHT" | "JobokPink" | "JobokDark";
 export type PrintJobStatus = "QUEUED" | "PRINTING" | "DONE" | "FAILED";
 
 export interface FrameSelectParams {
@@ -20,6 +20,8 @@ export interface PrintInfo {
   filterBw: boolean;
   filterBrightness: number;
   status: PrintJobStatus;
+  /** 촬영 날짜 (YYYY-MM-DD) */
+  capturedAt: string;
 }
 
 /** 프레임 색상/필터를 확정해 인쇄 작업(PrintJob)을 생성한다. 세션당 한 번만 가능하다. */

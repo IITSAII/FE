@@ -9,6 +9,10 @@ import {
   type AssignedPartner,
 } from "../../partner-location/api/partnerApi";
 import { PartnerToast } from "../../partner-location/ui/PartnerToast";
+import { Modal } from "../../../shared/ui/Modal/Modal";
+import { useModal } from "../../../shared/hooks/useModal";
+import { CompanyIntroCard } from "./CompanyIntroCard";
+import { COMPANY_INTRO_CONTENT } from "../lib/companyIntroContent";
 
 const CATEGORIES: CategoryTabItem[] = [
   { id: "majuhada", name: "마주하다" },
@@ -19,7 +23,7 @@ const CATEGORIES: CategoryTabItem[] = [
 ];
 
 export interface IntroGalleryPageProps {
-  /** QR로 진입한 `/intro/{sessionId}`에서만 전달된다. 있을 때만 배정된 업체 토스트를 보여준다. */
+  /** QR로 진입한 `/intro/{sessionId}`에서만 전달된다. 있을 때만 배정된 업체 토스트와 혜택 안내 모달을 보여준다. */
   sessionId?: string;
 }
 
@@ -29,6 +33,7 @@ export interface IntroGalleryPageProps {
 export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState("overnook");
   const [partner, setPartner] = useState<AssignedPartner | null>(null);
+  const benefitModal = useModal();
 
   useEffect(() => {
     if (!sessionId) return;
@@ -39,7 +44,10 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
 
     getAssignedPartner(sessionId, controller.signal)
       .then((result) => {
-        if (isMounted) setPartner(result);
+        if (isMounted) {
+          setPartner(result);
+          benefitModal.openModal();
+        }
       })
       .catch((err) => {
         if (isApiError(err) && err.code === "CANCELED") return;
@@ -50,7 +58,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
       isMounted = false;
       controller.abort();
     };
-  }, [sessionId]);
+  }, [sessionId, benefitModal.openModal]);
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
@@ -64,8 +72,8 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
           className="px-0 pt-3"
         />
 
-        {/* 빈 카드 템플릿 영역 */}
-        <div className="w-full bg-white min-h-[480px] p-6 overflow-hidden" />
+        {/* 선택된 업체의 매거진형 소개글 카드 */}
+        <CompanyIntroCard content={COMPANY_INTRO_CONTENT[selectedCategoryId]} />
       </main>
 
       {sessionId && partner && (
@@ -73,6 +81,17 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
           sessionId={sessionId}
           partner={partner}
           selectedCategoryId={selectedCategoryId}
+        />
+      )}
+
+      {sessionId && partner && (
+        <Modal
+          isOpen={benefitModal.isOpen}
+          onClose={benefitModal.closeModal}
+          title="혜택은 촬영 당일만 가능해요!"
+          description={`오늘 촬영한 사진을 ${partner.name} 매장에서\n사진을 보여주면 할인 혜택이 적용됩니다.`}
+          cancelText="매거진 보기"
+          confirmText="확인 했어요"
         />
       )}
     </div>

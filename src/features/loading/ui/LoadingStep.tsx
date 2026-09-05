@@ -5,19 +5,23 @@ import {
   type PhotoFrameTheme,
   type PhotoFilter,
 } from "../../../shared/ui/PhotoFrame/PhotoFrame";
+import { JobokFrame } from "../../../shared/ui/PhotoFrame/JobokFrame";
 import { QrCode } from "../../../shared/ui/QrCode/QrCode";
 import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
+import type { FrameDesign } from "../../frame/ui/FrameStep";
 
 export interface LoadingStepProps {
   sessionId: string;
   photos?: string[];
   relationshipTitle?: string | null;
+  design?: FrameDesign;
   variant?: PhotoFrameVariant;
   theme?: PhotoFrameTheme;
   filter?: PhotoFilter;
+  date: string;
   onComplete?: () => void;
   onBack?: () => void;
 }
@@ -39,9 +43,11 @@ export function LoadingStep({
   sessionId,
   photos = [],
   relationshipTitle,
+  design = "default",
   variant = "dark",
   theme = "pichimothan",
   filter = "default",
+  date,
   onComplete,
   onBack,
 }: LoadingStepProps) {
@@ -113,15 +119,25 @@ export function LoadingStep({
       {/* 화면 밖 실물 크기 PhotoFrame — 최종 이미지 캡처 전용, 화면에는 보이지 않는다 */}
       <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden>
         <div ref={captureNodeRef}>
-          <PhotoFrame
-            variant={variant}
-            theme={theme}
-            photos={photos}
-            relationship={relationshipTitle || "Friend"}
-            date="2026.05.16"
-            qrCodeUrl={qrCodeUrl}
-            filter={filter}
-          />
+          {design === "jobok" ? (
+            <JobokFrame
+              variant={variant}
+              photos={photos}
+              date={date}
+              qrCodeUrl={qrCodeUrl}
+              filter={filter}
+            />
+          ) : (
+            <PhotoFrame
+              variant={variant}
+              theme={theme}
+              photos={photos}
+              relationship={relationshipTitle || "Friend"}
+              date={date}
+              qrCodeUrl={qrCodeUrl}
+              filter={filter}
+            />
+          )}
         </div>
       </div>
 
