@@ -89,26 +89,36 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
       return stream;
     }
 
-    const alternative = videoInputs.find(
+    const candidates = videoInputs.filter(
       (d) => d.deviceId !== currentDeviceId && !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
     );
 
-    if (!alternative) {
-      applyZoomIfSupported(currentTrack);
-      return stream;
+    for (const candidate of candidates) {
+      try {
+        const candidateStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: candidate.deviceId },
+            facingMode: { exact: "user" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        const candidateTrack = candidateStream.getVideoTracks()[0];
+        if (candidateTrack?.getSettings().facingMode === "user") {
+          stream.getTracks().forEach((track) => track.stop());
+          return candidateStream;
+        }
+
+        candidateStream.getTracks().forEach((track) => track.stop());
+      } catch (err) {
+        console.warn("대체 카메라 연결 실패:", err);
+      }
     }
 
-    const newStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        deviceId: { exact: alternative.deviceId },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-      audio: false,
-    });
-
-    stream.getTracks().forEach((track) => track.stop());
-    return newStream;
+    applyZoomIfSupported(currentTrack);
+    return stream;
   } catch (err) {
     console.warn("메인 카메라 선택 실패, 기본 카메라를 사용합니다:", err);
     return stream;
