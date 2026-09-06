@@ -160,8 +160,7 @@ export function PhotoStep({
   );
 
   const hasRelation =
-    Boolean(selectedRelationTitle) &&
-    selectedRelationTitle !== "관계 설정 안 함";
+    Boolean(selectedRelationTitle) && selectedRelationTitle !== "Not Set";
 
   // 카메라 비디오 스트림 연결
   useEffect(() => {
