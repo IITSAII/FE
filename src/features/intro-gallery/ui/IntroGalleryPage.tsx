@@ -12,6 +12,7 @@ import { PartnerToast } from "../../partner-location/ui/PartnerToast";
 import { Modal } from "../../../shared/ui/Modal/Modal";
 import { useModal } from "../../../shared/hooks/useModal";
 import { CompanyIntroCard } from "./CompanyIntroCard";
+import { CategoryLocationToast } from "./CategoryLocationToast";
 import { COMPANY_INTRO_CONTENT } from "../lib/companyIntroContent";
 
 const CATEGORIES: CategoryTabItem[] = [
@@ -106,6 +107,10 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
           partner={partner}
           selectedCategoryId={selectedCategoryId}
         />
+      )}
+
+      {!sessionId && (
+        <CategoryLocationToast selectedCategoryId={selectedCategoryId} />
       )}
 
       {sessionId && partner && (
