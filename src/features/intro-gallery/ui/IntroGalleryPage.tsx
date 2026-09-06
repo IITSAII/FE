@@ -22,6 +22,10 @@ const CATEGORIES: CategoryTabItem[] = [
   { id: "pichimothan", name: "피치못한" },
 ];
 
+/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(PARTNER_NOT_ASSIGNED)가 날 수 있어 재시도한다. */
+const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
+const PARTNER_FETCH_MAX_RETRIES = 5;
+
 export interface IntroGalleryPageProps {
   /** QR로 진입한 `/intro/{sessionId}`에서만 전달된다. 있을 때만 배정된 업체 토스트와 혜택 안내 모달을 보여준다. */
   sessionId?: string;
@@ -40,22 +44,42 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
 
     setPartner(null);
     let isMounted = true;
+    let retryTimer: ReturnType<typeof setTimeout>;
     const controller = new AbortController();
 
-    getAssignedPartner(sessionId, controller.signal)
-      .then((result) => {
-        if (isMounted) {
-          setPartner(result);
-          benefitModal.openModal();
-        }
-      })
-      .catch((err) => {
-        if (isApiError(err) && err.code === "CANCELED") return;
-        console.error("배정된 제휴업체 조회 실패:", err);
-      });
+    function fetchPartner(attempt: number) {
+      getAssignedPartner(sessionId!, controller.signal)
+        .then((result) => {
+          if (isMounted) {
+            setPartner(result);
+            benefitModal.openModal();
+          }
+        })
+        .catch((err) => {
+          if (isApiError(err) && err.code === "CANCELED") return;
+
+          if (
+            isMounted &&
+            isApiError(err) &&
+            err.code === "PARTNER_NOT_ASSIGNED" &&
+            attempt < PARTNER_FETCH_MAX_RETRIES
+          ) {
+            retryTimer = setTimeout(
+              () => fetchPartner(attempt + 1),
+              PARTNER_FETCH_RETRY_DELAY_MS,
+            );
+            return;
+          }
+
+          console.error("배정된 제휴업체 조회 실패:", err);
+        });
+    }
+
+    fetchPartner(0);
 
     return () => {
       isMounted = false;
+      clearTimeout(retryTimer);
       controller.abort();
     };
   }, [sessionId, benefitModal.openModal]);
