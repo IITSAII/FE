@@ -4,7 +4,10 @@ import banjjakMap from "../assets/banjjak-map.svg";
 import banjjakArrow from "../assets/banjjak-arrow.gif";
 import type { PartnerLocationVariant } from "../lib/partnerMatch";
 
-const ASSETS: Record<"pichimothan" | "banjjak", { map: string; arrow: string }> = {
+const ASSETS: Record<
+  "pichimothan" | "banjjak",
+  { map: string; arrow: string }
+> = {
   pichimothan: { map: pichimothanMap, arrow: pichimothanArrow },
   banjjak: { map: banjjakMap, arrow: banjjakArrow },
 };
@@ -23,11 +26,14 @@ export interface PartnerRouteMapProps {
  * 넘치는 아래쪽은 잘라낸다. 실제 화면에서 화살표가 지도 핀과 어긋나 보이면 아래 top/scale 값을
  * 조정해야 한다.
  */
-export function PartnerRouteMap({ variant, locationLabel }: PartnerRouteMapProps) {
+export function PartnerRouteMap({
+  variant,
+  locationLabel,
+}: PartnerRouteMapProps) {
   const { map, arrow } = ASSETS[variant];
 
   return (
-    <div className="relative w-full aspect-[366/620] overflow-hidden bg-white">
+    <div className="relative w-full aspect-366/620 overflow-hidden bg-white">
       <img
         src={map}
         alt={`${locationLabel} 위치 안내 지도`}
@@ -36,7 +42,7 @@ export function PartnerRouteMap({ variant, locationLabel }: PartnerRouteMapProps
       <img
         src={arrow}
         alt=""
-        className="absolute top-0 left-0 w-full h-auto"
+        className={`absolute w-full h-auto ${variant === "pichimothan" ? "-top-20.5 -right-0.25" : "-top-11.5 -right-5"}`}
       />
     </div>
   );

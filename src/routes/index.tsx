@@ -174,6 +174,7 @@ function SnapFlowPage() {
       {currentStep === "photo" && sessionId && (
         <PhotoStep
           sessionId={sessionId}
+          selectedRelationId={relationData?.selectedRelationId}
           selectedRelationTitle={relationData?.selectedRelationTitle}
           onNext={handlePhotoNext}
           onBack={handleBackToRelation}

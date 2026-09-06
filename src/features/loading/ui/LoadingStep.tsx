@@ -34,6 +34,11 @@ const LOADING_PHRASES = [
   "스토리 매거진까지!",
 ];
 
+/** 한 줄이 밝아지는 데 걸리는 간격(ms) */
+const PHRASE_REVEAL_INTERVAL_MS = 1000;
+/** 마지막 줄까지 다 밝아진 뒤 추가로 대기하는 시간(ms) */
+const PHRASE_REVEAL_HOLD_MS = 5000;
+
 /**
  * 사진 인화 및 출력 로딩 플로우 단계 컴포넌트 (LoadingStep)
  * - 화면 밖에 실물 크기 PhotoFrame을 렌더링해 최종 이미지로 캡처, 서버에 업로드한다.
@@ -55,6 +60,8 @@ export function LoadingStep({
   const [isUploadDone, setIsUploadDone] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [activePhraseCount, setActivePhraseCount] = useState(0);
+  const [isPhraseSequenceDone, setIsPhraseSequenceDone] = useState(false);
   const onCompleteCalledRef = useRef(false);
   const captureNodeRef = useRef<HTMLDivElement>(null);
   const uploadStartedRef = useRef(false);
@@ -70,6 +77,25 @@ export function LoadingStep({
 
     return () => clearInterval(timer);
   }, [progress]);
+
+  // 안내 문구를 한 줄씩 순서대로 밝히고, 마지막 줄까지 끝나면 일정 시간 대기한다.
+  useEffect(() => {
+    const timers = LOADING_PHRASES.map((_, index) =>
+      setTimeout(
+        () => setActivePhraseCount(index + 1),
+        index * PHRASE_REVEAL_INTERVAL_MS,
+      ),
+    );
+
+    const doneTimer = setTimeout(
+      () => setIsPhraseSequenceDone(true),
+      (LOADING_PHRASES.length - 1) * PHRASE_REVEAL_INTERVAL_MS +
+        PHRASE_REVEAL_HOLD_MS,
+    );
+    timers.push(doneTimer);
+
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   // 화면 밖 PhotoFrame을 캡처해 최종 이미지로 업로드한다(정확히 한 번).
   useEffect(() => {
@@ -102,17 +128,18 @@ export function LoadingStep({
     setRetryCount((count) => count + 1);
   };
 
-  // 진행률 100% + 업로드 완료가 모두 충족되면 정확히 한 번 onComplete 호출
+  // 진행률 100% + 업로드 완료 + 안내 문구 애니메이션 종료가 모두 충족되면 정확히 한 번 onComplete 호출
   useEffect(() => {
     if (
       progress >= 100 &&
       isUploadDone &&
+      isPhraseSequenceDone &&
       !onCompleteCalledRef.current
     ) {
       onCompleteCalledRef.current = true;
       onComplete?.();
     }
-  }, [progress, isUploadDone, onComplete]);
+  }, [progress, isUploadDone, isPhraseSequenceDone, onComplete]);
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
@@ -179,7 +206,7 @@ export function LoadingStep({
           <div className="flex flex-col justify-between w-[251px] h-full pt-[32.57px] pb-[85.89px] bg-gray-900">
             <div className="pl-[27.33px] pr-[38.67px] flex flex-col text-ipad-heading-4-medium text-iphone-background">
               {LOADING_PHRASES.map((phrase, index) => {
-                const isActive = progress >= index * 20;
+                const isActive = index < activePhraseCount;
                 return (
                   <p
                     key={phrase}
