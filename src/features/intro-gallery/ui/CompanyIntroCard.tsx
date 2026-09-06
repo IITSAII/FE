@@ -23,7 +23,10 @@ export interface CompanyIntroCardProps {
  * 카테고리 탭에서 선택된 업체의 매거진형 소개글 카드 (CompanyIntroCard)
  * - 히어로 이미지(오버레이 이미 적용된 파일) + 타이틀/참여자 + 소개 문단으로 구성
  */
-export function CompanyIntroCard({ content, className }: CompanyIntroCardProps) {
+export function CompanyIntroCard({
+  content,
+  className,
+}: CompanyIntroCardProps) {
   const { heroImage, titleLines, members, paragraphs } = content;
 
   return (
@@ -49,7 +52,7 @@ export function CompanyIntroCard({ content, className }: CompanyIntroCardProps) 
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 px-6.25 py-6 text-gray-600 text-[14px] leading-[1.5] tracking-[-0.35px] whitespace-pre-line">
+      <div className="flex flex-col gap-4 px-6.25 py-6 text-gray-600 text-iphone-body-2-regular leading-[1.5] tracking-[-0.35px] whitespace-pre-line">
         {paragraphs.map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
