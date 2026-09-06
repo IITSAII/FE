@@ -102,11 +102,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
       </main>
 
       {sessionId && partner && (
-        <PartnerToast
-          sessionId={sessionId}
-          partner={partner}
-          selectedCategoryId={selectedCategoryId}
-        />
+        <PartnerToast sessionId={sessionId} partner={partner} />
       )}
 
       {!sessionId && (

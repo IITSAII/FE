@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import MapPinIcon from "../../../shared/assets/icons/MapPinIcon.svg?react";
+import { LocationToastCard } from "../../../shared/ui/LocationToastCard/LocationToastCard";
 import { COMPANY_LOCATION_INFO } from "../lib/companyLocationContent";
 
 export interface CategoryLocationToastProps {
@@ -9,7 +9,8 @@ export interface CategoryLocationToastProps {
 
 /**
  * 세션(QR) 없이 `/intro`에 진입했을 때 화면 하단에 떠 있는 위치 안내 카드.
- * 배정된 제휴업체가 없으므로, 현재 선택된 카테고리 탭의 업체 위치 보기로 안내한다.
+ * 배정된 제휴업체가 없으므로 혜택 문구 대신 항상 "위치 보기"를 보여주고,
+ * 현재 선택된 카테고리 탭의 업체 위치 보기로 안내한다.
  * "잇, 사이"처럼 실제 위치 정보가 없는 탭이 선택되면 카드를 보여주지 않는다.
  */
 export function CategoryLocationToast({
@@ -22,21 +23,14 @@ export function CategoryLocationToast({
     <Link
       to="/intro/location/$companyId"
       params={{ companyId: selectedCategoryId }}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[366px] px-4.5 z-20"
+      className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
     >
-      <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 bg-white/60 backdrop-blur-[6px] shadow-[0px_2px_40px_0px_rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <MapPinIcon className="size-3 shrink-0 text-gray-900" />
-          <p className="text-[14px] font-semibold text-black truncate">
-            {info.name}
-          </p>
-        </div>
-        <div className="h-7.5 px-4 flex items-center justify-center rounded-[4px] bg-green-500 shrink-0">
-          <p className="text-[14px] font-semibold text-white whitespace-nowrap">
-            위치 보기
-          </p>
-        </div>
-      </div>
+      <LocationToastCard
+        imageUrl={info.image}
+        name={info.name}
+        location={info.location}
+        buttonLabel="위치 보기"
+      />
     </Link>
   );
 }

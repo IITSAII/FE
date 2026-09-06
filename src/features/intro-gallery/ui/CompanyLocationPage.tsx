@@ -36,10 +36,13 @@ export function CompanyLocationPage({ companyId }: CompanyLocationPageProps) {
             </p>
           ) : info.variant === "naver-map" ? (
             <div className="w-full aspect-[366/620]">
-              <NaverMap address={info.address ?? ""} name={info.name} />
+              <NaverMap address={info.location} name={info.name} />
             </div>
           ) : (
-            <PartnerRouteMap variant={info.variant} locationLabel={info.name} />
+            <PartnerRouteMap
+              variant={info.variant}
+              locationLabel={`${info.name} (${info.location})`}
+            />
           )}
         </div>
       </main>
