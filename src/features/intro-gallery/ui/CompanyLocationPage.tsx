@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
-import { NaverMap } from "../../partner-location/ui/NaverMap";
 import { PartnerRouteMap } from "../../partner-location/ui/PartnerRouteMap";
 import { COMPANY_LOCATION_INFO } from "../lib/companyLocationContent";
 
@@ -33,14 +32,10 @@ export function CompanyLocationPage({ companyId }: CompanyLocationPageProps) {
         </div>
 
         <div className="w-full flex-1 flex items-center justify-center">
-          {!info ? (
+          {!info || info.variant === "naver-map" ? (
             <p className="text-iphone-body-1-light text-gray-500 text-center px-6 py-20">
               업체 정보를 찾을 수 없어요.
             </p>
-          ) : info.variant === "naver-map" ? (
-            <div className="w-full aspect-[366/620]">
-              <NaverMap address={info.location} name={info.name} />
-            </div>
           ) : (
             <PartnerRouteMap
               variant={info.variant}

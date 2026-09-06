@@ -9,9 +9,9 @@ export interface CompanyLocationInfo {
   name: string;
   /** 위치보기 카드 썸네일 이미지 */
   image: string;
-  /** 위치 안내 문구. `naver-map` variant에서는 지오코딩 주소로도 사용된다. */
+  /** 위치 안내 문구. `naver-map` variant에서는 네이버 지도 검색어로도 사용된다. */
   location: string;
-  /** 피치못한/반짝은 정적 약도, 그 외는 네이버 지도를 사용한다. */
+  /** 피치못한/반짝은 정적 약도, 그 외는 토스트 카드에서 네이버 지도 검색으로 바로 연결된다. */
   variant: PartnerLocationVariant;
 }
 

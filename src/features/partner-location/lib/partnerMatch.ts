@@ -12,3 +12,8 @@ export function getPartnerLocationVariant(
   if (partnerName.includes("반짝")) return "banjjak";
   return "naver-map";
 }
+
+/** 주소로 네이버 지도 검색 페이지 URL을 만든다. */
+export function getNaverMapSearchUrl(address: string): string {
+  return `https://map.naver.com/p/search/${encodeURIComponent(address)}`;
+}
