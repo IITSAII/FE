@@ -15,6 +15,7 @@ export interface PhotoStepData {
 
 export interface PhotoStepProps {
   sessionId: string;
+  selectedRelationId?: string | null;
   selectedRelationTitle?: string | null;
   totalPhotosCount?: number;
   timerDurationSeconds?: number;
@@ -22,40 +23,88 @@ export interface PhotoStepProps {
   onBack?: () => void;
 }
 
-// 관계 선택 시 제공할 6가지 미션 포즈 예시
-const DEFAULT_MISSIONS = [
-  {
-    title: "검지 들고 ‘엇!’ 하는 표정",
+// 관계별 추천 포즈 미션 목록 및 하단 안내 문구
+const MISSIONS_BY_RELATION: Record<
+  string,
+  { description: string; poses: string[] }
+> = {
+  close: {
     description: "상대와 같은 포즈를 해요",
+    poses: [
+      "양손 주먹으로 턱받침!",
+      "한 손으로 입 가리기!",
+      "어깨동무하고 브이!",
+      "양손으로 턱받침!",
+      "두 손으로 입가리기!",
+      "카메라 쳐다보면서 거래처 악수!",
+      "둘 다 팔짱끼고 고개 갸웃!",
+      "어깨를 맞대고 팔짱 끼기!",
+      "한 손으로 브이하기!",
+      "양손으로 엄지 척!",
+    ],
   },
-  {
-    title: "볼에 손가락 대고 유쾌하게 미소짓기",
-    description: "서로 다른 앙증맞은 표정을 지어보세요",
+  friend: {
+    description: "둘의 케미를 보여주세요",
+    poses: [
+      "양손 주먹으로 턱받침!",
+      "서로 귀엽게 째려보기!",
+      "붙어서 브이!",
+      "양손으로 턱받침!",
+      "한 사람이 다른 사람한테 볼콕!",
+      "서로 엇갈리게 큰 하트!",
+      "둘 다 팔짱끼고 고개 갸웃!",
+      "어깨를 맞대고 팔짱 끼기!",
+      "한 손으로 브이하기!",
+      "엇갈리게 같은 방향으로 큰 하트!",
+      "함께 손하트!",
+      "윙크하고 입가에 손가락 콕!",
+    ],
   },
-  {
-    title: "서로의 얼굴을 마주보고 웃어보기",
-    description: "장난스러운 눈빛으로 카메라를 바라보세요",
+  some: {
+    description: "설레는 케미를 보여주세요",
+    poses: [
+      "서로 바라보면서 한 컷!",
+      "한 사람이 앞에서 손하트, 상대는 그 안에 얼굴 쏙!",
+      "한 명이 다른 한 명 바라보기!",
+      "각자 한 손 볼콕!",
+      "팔짱끼고 어깨 콩!",
+      "둘이서 손하트 만들기!",
+      "ET 포즈! 손가락 맞대기",
+      "둘 다 양손 꽃받침!",
+      "오타쿠 하트 하기!",
+      "한 사람이 귓속말 하는 척!",
+    ],
   },
-  {
-    title: "어깨를 감싸쥐고 사이좋게 브이!",
-    description: "다정한 케미를 자랑해보세요",
+  lover: {
+    description: "둘의 다정함을 보여주세요",
+    poses: [
+      "한 사람이 양손으로 볼 감싸기!",
+      "한 사람이 상대 볼을 감싸고, 둘 다 입술 우~!",
+      "한 사람은 뒤에서 안고 머리 쓰담, 다른 한 사람은 양손 볼콕!",
+      "한 사람이 양손으로 상대 볼콕!",
+      "한 사람이 한 손으로 상대 볼콕!",
+      "한 사람이 앞에서 손하트, 상대는 그 안에 얼굴 쏙!",
+      "한 사람이 상대 볼을 감싸고, 한 사람만 입술 우~!",
+      "서로 팔짱끼고 머리 콩!",
+      "다정하게 백허그!",
+      "백허그하면서 상대는 꽃받침!",
+      "함께 손하트!",
+      "다정하게 어깨에 기대기!",
+    ],
   },
-  {
-    title: "서로에게 하트를 건네는 포즈",
-    description: "손하트로 설레는 순간을 남기세요",
-  },
-  {
-    title: "자유 포즈! 제일 당당한 표정 짓기",
-    description: "마지막 사진을 멋지게 장식해 보세요",
-  },
-];
+};
+
+// 관계가 선택되지 않았을 때(또는 알 수 없는 관계일 때) 사용할 기본 미션
+const DEFAULT_MISSION_SET = MISSIONS_BY_RELATION.close;
 
 // 아이패드 등에서 기본으로 잡히는 초광각(Ultra Wide) 렌즈 명칭 패턴
 const ULTRA_WIDE_LABEL_PATTERN = /ultra ?wide|울트라|초광각/i;
 
 // zoom 트랙 제약은 표준 TS DOM 타입에 없는 실험적(Safari) 속성이라 별도 타입으로 취급
 type ZoomCapableTrack = {
-  getCapabilities?: () => MediaTrackCapabilities & { zoom?: { min: number; max: number } };
+  getCapabilities?: () => MediaTrackCapabilities & {
+    zoom?: { min: number; max: number };
+  };
   applyConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
 };
 
@@ -65,9 +114,14 @@ function applyZoomIfSupported(track: MediaStreamTrack) {
   const zoomCapability = zoomTrack.getCapabilities?.()?.zoom;
   if (!zoomCapability) return;
 
-  const targetZoom = Math.min(zoomCapability.max, Math.max(zoomCapability.min, 2));
+  const targetZoom = Math.min(
+    zoomCapability.max,
+    Math.max(zoomCapability.min, 2),
+  );
   zoomTrack
-    .applyConstraints({ advanced: [{ zoom: targetZoom } as MediaTrackConstraintSet] })
+    .applyConstraints({
+      advanced: [{ zoom: targetZoom } as MediaTrackConstraintSet],
+    })
     .catch((err) => console.warn("카메라 줌 조정 실패:", err));
 }
 
@@ -82,15 +136,21 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
     const videoInputs = devices.filter((d) => d.kind === "videoinput");
 
     const currentDeviceId = currentTrack.getSettings().deviceId;
-    const currentDevice = videoInputs.find((d) => d.deviceId === currentDeviceId);
+    const currentDevice = videoInputs.find(
+      (d) => d.deviceId === currentDeviceId,
+    );
 
-    const currentIsUltraWide = ULTRA_WIDE_LABEL_PATTERN.test(currentDevice?.label ?? "");
+    const currentIsUltraWide = ULTRA_WIDE_LABEL_PATTERN.test(
+      currentDevice?.label ?? "",
+    );
     if (!currentIsUltraWide) {
       return stream;
     }
 
     const candidates = videoInputs.filter(
-      (d) => d.deviceId !== currentDeviceId && !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
+      (d) =>
+        d.deviceId !== currentDeviceId &&
+        !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
     );
 
     for (const candidate of candidates) {
@@ -132,6 +192,7 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
  */
 export function PhotoStep({
   sessionId,
+  selectedRelationId,
   selectedRelationTitle,
   totalPhotosCount = 6,
   timerDurationSeconds = 10,
@@ -160,8 +221,7 @@ export function PhotoStep({
   );
 
   const hasRelation =
-    Boolean(selectedRelationTitle) &&
-    selectedRelationTitle !== "관계 설정 안 함";
+    Boolean(selectedRelationTitle) && selectedRelationTitle !== "Not Set";
 
   // 카메라 비디오 스트림 연결
   useEffect(() => {
@@ -336,8 +396,13 @@ export function PhotoStep({
     }
   }, [capturedPhotos, totalPhotosCount, onNext]);
 
-  const currentMission =
-    DEFAULT_MISSIONS[currentPhotoIndex % DEFAULT_MISSIONS.length];
+  const missionSet =
+    (selectedRelationId && MISSIONS_BY_RELATION[selectedRelationId]) ||
+    DEFAULT_MISSION_SET;
+  const currentMission = {
+    title: missionSet.poses[currentPhotoIndex % missionSet.poses.length],
+    description: missionSet.description,
+  };
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
@@ -345,7 +410,9 @@ export function PhotoStep({
       <canvas ref={canvasRef} className="hidden" />
 
       {/* 메인 프레임 영역 (최대 너비 834px) */}
-      <main className="w-full max-w-[834px] px-6 pt-16 pb-12 flex-1 flex flex-col items-center">
+      <main
+        className={`w-full max-w-[834px] px-6 pb-12 flex-1 flex flex-col items-center ${hasRelation ? "pt-16" : "pt-38"}`}
+      >
         {/* 상단 진행률 (1/6) 및 타이머 (10) 서브 네비바 */}
         <div className="w-full max-w-[786px] flex items-center justify-between">
           <span className="text-ipad-heading-1-medium text-gray-900">

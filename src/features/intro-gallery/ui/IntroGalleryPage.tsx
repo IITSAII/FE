@@ -12,6 +12,7 @@ import { PartnerToast } from "../../partner-location/ui/PartnerToast";
 import { Modal } from "../../../shared/ui/Modal/Modal";
 import { useModal } from "../../../shared/hooks/useModal";
 import { CompanyIntroCard } from "./CompanyIntroCard";
+import { CategoryLocationToast } from "./CategoryLocationToast";
 import { COMPANY_INTRO_CONTENT } from "../lib/companyIntroContent";
 
 const CATEGORIES: CategoryTabItem[] = [
@@ -21,6 +22,10 @@ const CATEGORIES: CategoryTabItem[] = [
   { id: "itsai", name: "잇, 사이" },
   { id: "pichimothan", name: "피치못한" },
 ];
+
+/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(PARTNER_NOT_ASSIGNED)가 날 수 있어 재시도한다. */
+const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
+const PARTNER_FETCH_MAX_RETRIES = 5;
 
 export interface IntroGalleryPageProps {
   /** QR로 진입한 `/intro/{sessionId}`에서만 전달된다. 있을 때만 배정된 업체 토스트와 혜택 안내 모달을 보여준다. */
@@ -40,22 +45,42 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
 
     setPartner(null);
     let isMounted = true;
+    let retryTimer: ReturnType<typeof setTimeout>;
     const controller = new AbortController();
 
-    getAssignedPartner(sessionId, controller.signal)
-      .then((result) => {
-        if (isMounted) {
-          setPartner(result);
-          benefitModal.openModal();
-        }
-      })
-      .catch((err) => {
-        if (isApiError(err) && err.code === "CANCELED") return;
-        console.error("배정된 제휴업체 조회 실패:", err);
-      });
+    function fetchPartner(attempt: number) {
+      getAssignedPartner(sessionId!, controller.signal)
+        .then((result) => {
+          if (isMounted) {
+            setPartner(result);
+            benefitModal.openModal();
+          }
+        })
+        .catch((err) => {
+          if (isApiError(err) && err.code === "CANCELED") return;
+
+          if (
+            isMounted &&
+            isApiError(err) &&
+            err.code === "PARTNER_NOT_ASSIGNED" &&
+            attempt < PARTNER_FETCH_MAX_RETRIES
+          ) {
+            retryTimer = setTimeout(
+              () => fetchPartner(attempt + 1),
+              PARTNER_FETCH_RETRY_DELAY_MS,
+            );
+            return;
+          }
+
+          console.error("배정된 제휴업체 조회 실패:", err);
+        });
+    }
+
+    fetchPartner(0);
 
     return () => {
       isMounted = false;
+      clearTimeout(retryTimer);
       controller.abort();
     };
   }, [sessionId, benefitModal.openModal]);
@@ -63,25 +88,32 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
       {/* 데스크톱 등 대형 화면 접근 시에도 모바일 너비(max-w-[430px])로 중앙 정렬 */}
-      <main className="w-full max-w-[430px] mx-auto px-4.5 pt-16 pb-12 flex flex-col gap-4 box-border">
+      <main className="w-full max-w-[430px] mx-auto px-4.5 pt-16 pb-12 flex flex-col gap-4 box-border relative">
         {/* 카테고리 탭 영역 */}
-        <CategoryTabs
-          categories={CATEGORIES}
-          selectedId={selectedCategoryId}
-          onSelectCategory={(id) => setSelectedCategoryId(id)}
-          className="px-0 pt-3"
-        />
+        <div className="fixed top-15 inset-x-0 z-50 bg-iphone-background">
+          <div className="w-full max-w-[430px] mx-auto">
+            <CategoryTabs
+              categories={CATEGORIES}
+              selectedId={selectedCategoryId}
+              onSelectCategory={(id) => setSelectedCategoryId(id)}
+              className="pt-3"
+            />
+          </div>
+        </div>
 
         {/* 선택된 업체의 매거진형 소개글 카드 */}
-        <CompanyIntroCard content={COMPANY_INTRO_CONTENT[selectedCategoryId]} />
+        <CompanyIntroCard
+          content={COMPANY_INTRO_CONTENT[selectedCategoryId]}
+          className="mt-17.75"
+        />
       </main>
 
       {sessionId && partner && (
-        <PartnerToast
-          sessionId={sessionId}
-          partner={partner}
-          selectedCategoryId={selectedCategoryId}
-        />
+        <PartnerToast sessionId={sessionId} partner={partner} />
+      )}
+
+      {!sessionId && (
+        <CategoryLocationToast selectedCategoryId={selectedCategoryId} />
       )}
 
       {sessionId && partner && (

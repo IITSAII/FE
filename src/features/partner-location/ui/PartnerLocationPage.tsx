@@ -5,7 +5,6 @@ import { isApiError } from "../../../shared/lib/apiError";
 import { getAssignedPartner, type AssignedPartner } from "../api/partnerApi";
 import { getPartnerLocationVariant } from "../lib/partnerMatch";
 import { PartnerRouteMap } from "./PartnerRouteMap";
-import { NaverMap } from "./NaverMap";
 
 export interface PartnerLocationPageProps {
   sessionId: string;
@@ -17,8 +16,8 @@ type LoadState =
   | { status: "ready"; partner: AssignedPartner };
 
 /**
- * 배정된 제휴업체 위치를 안내하는 화면. 피치못한/반짝은 제공된 SVG+GIF 조합을,
- * 그 외(overnook, 마주하다)는 주소 기반 네이버 지도를 보여준다.
+ * 배정된 제휴업체 위치를 안내하는 화면. 피치못한/반짝의 위치 보기 전용 페이지로,
+ * 그 외(overnook, 마주하다)는 토스트 카드에서 바로 네이버 지도 검색으로 연결되어 이 페이지로 오지 않는다.
  */
 export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -85,14 +84,14 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
           {state.status === "ready" &&
             (() => {
               const variant = getPartnerLocationVariant(state.partner.name);
-              return variant === "naver-map" ? (
-                <div className="w-full aspect-[366/620]">
-                  <NaverMap
-                    address={state.partner.location}
-                    name={state.partner.name}
-                  />
-                </div>
-              ) : (
+              if (variant === "naver-map") {
+                return (
+                  <p className="text-iphone-body-1-light text-gray-500 text-center px-6 py-20">
+                    위치 정보를 찾을 수 없어요.
+                  </p>
+                );
+              }
+              return (
                 <PartnerRouteMap
                   variant={variant}
                   locationLabel={`${state.partner.name} (${state.partner.location})`}

@@ -52,6 +52,17 @@ const RELATION_OPTIONS: RelationOption[] = [
   },
 ];
 
+/** 프레임에 출력되는 관계 문구(영문). */
+const FRAME_RELATION_TITLE: Record<RelationshipType, string> = {
+  GETTING_CLOSE: "Getting to Know",
+  FRIEND: "Friends",
+  CRUSH: "More Than Friends",
+  COUPLE: "Couple",
+};
+
+/** 관계를 설정하지 않았을 때 프레임에 출력되는 문구(영문). */
+const FRAME_RELATION_TITLE_NOT_SET = "Not Set";
+
 /**
  * 관계 선택 플로우 단계 컴포넌트 (RelationStep)
  * - MissionCard 컴포넌트를 합성하여 어떤 사이인지 관계 옵션을 선택하고 다음 플로우 단계로 전환합니다.
@@ -98,7 +109,11 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
     onNext?.({
       selectedRelationId: resolvedId,
       selectedRelationTitle:
-        resolvedId === "none" ? "관계 설정 안 함" : (selectedOption?.title ?? null),
+        resolvedId === "none"
+          ? FRAME_RELATION_TITLE_NOT_SET
+          : selectedOption
+            ? FRAME_RELATION_TITLE[selectedOption.relationshipType]
+            : null,
     });
   };
 
@@ -120,7 +135,7 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       {/* 메인 프레임 영역 (최대 너비 834px 대응) */}
-      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
+      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
           {status?.stepExpiresAt && (
@@ -131,7 +146,7 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
         </div>
 
         {/* 타이틀 영역 */}
-        <div className="w-full pt-15 flex flex-col items-center gap-2">
+        <div className="w-full py-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             오늘의 관계를 선택해주세요 !
           </h2>
@@ -141,7 +156,7 @@ export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
         </div>
 
         {/* 관계 선택 MissionCard 리스트 및 관계 설정 안 하기 옵션 */}
-        <div className="w-full flex flex-col items-center gap-11 my-auto px-12.75">
+        <div className="w-full h-157.25 flex flex-col items-center gap-11 px-12.75">
           <div className="w-full flex flex-col items-center gap-8">
             {RELATION_OPTIONS.map((option) => (
               <MissionCard

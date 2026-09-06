@@ -19,6 +19,7 @@ import { Route as IntroSessionIdRouteImport } from './routes/intro.$sessionId'
 import { Route as IntroSessionIdIndexRouteImport } from './routes/intro.$sessionId.index'
 import { Route as IntroSessionIdDownloadRouteImport } from './routes/intro.$sessionId.download'
 import { Route as IntroSessionIdLocationRouteImport } from './routes/intro.$sessionId.location'
+import { Route as IntroLocationCompanyIdRouteImport } from './routes/intro.location.$companyId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const IntroSessionIdLocationRoute = IntroSessionIdLocationRouteImport.update({
   path: '/location',
   getParentRoute: () => IntroSessionIdRoute,
 } as any)
+const IntroLocationCompanyIdRoute = IntroLocationCompanyIdRouteImport.update({
+  id: '/location/$companyId',
+  path: '/location/$companyId',
+  getParentRoute: () => IntroRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/intro/': typeof IntroIndexRoute
   '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
   '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
   '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/intro': typeof IntroIndexRoute
   '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
   '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
   '/intro/$sessionId': typeof IntroSessionIdIndexRoute
 }
 export interface FileRoutesById {
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/intro/': typeof IntroIndexRoute
   '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
   '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
   '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/intro/'
     | '/intro/$sessionId/download'
     | '/intro/$sessionId/location'
+    | '/intro/location/$companyId'
     | '/intro/$sessionId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/intro'
     | '/intro/$sessionId/download'
     | '/intro/$sessionId/location'
+    | '/intro/location/$companyId'
     | '/intro/$sessionId'
   id:
     | '__root__'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/intro/'
     | '/intro/$sessionId/download'
     | '/intro/$sessionId/location'
+    | '/intro/location/$companyId'
     | '/intro/$sessionId/'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntroSessionIdLocationRouteImport
       parentRoute: typeof IntroSessionIdRoute
     }
+    '/intro/location/$companyId': {
+      id: '/intro/location/$companyId'
+      path: '/location/$companyId'
+      fullPath: '/intro/location/$companyId'
+      preLoaderRoute: typeof IntroLocationCompanyIdRouteImport
+      parentRoute: typeof IntroRoute
+    }
   }
 }
 
@@ -245,11 +264,13 @@ const IntroSessionIdRouteWithChildren = IntroSessionIdRoute._addFileChildren(
 interface IntroRouteChildren {
   IntroSessionIdRoute: typeof IntroSessionIdRouteWithChildren
   IntroIndexRoute: typeof IntroIndexRoute
+  IntroLocationCompanyIdRoute: typeof IntroLocationCompanyIdRoute
 }
 
 const IntroRouteChildren: IntroRouteChildren = {
   IntroSessionIdRoute: IntroSessionIdRouteWithChildren,
   IntroIndexRoute: IntroIndexRoute,
+  IntroLocationCompanyIdRoute: IntroLocationCompanyIdRoute,
 }
 
 const IntroRouteWithChildren = IntroRoute._addFileChildren(IntroRouteChildren)
