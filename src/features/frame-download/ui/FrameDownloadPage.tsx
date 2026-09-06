@@ -127,7 +127,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
                 <img
                   src={state.finalImageUrl}
                   alt="완성된 네컷 사진 프레임"
-                  className="w-full h-auto object-contain"
+                  className="object-contain w-[146.627px] h-[437px]"
                 />
               )}
             </div>
