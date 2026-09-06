@@ -35,7 +35,7 @@ export function CategoryTabs({
     <div
       role="tablist"
       className={cn(
-        "flex items-center gap-4 pt-3 px-4.5 overflow-x-auto scrollbar-none",
+        "flex items-center gap-4 pt-3 px-4.5 overflow-x-auto scrollbar-none bg-iphone-background",
         className,
       )}
       {...props}

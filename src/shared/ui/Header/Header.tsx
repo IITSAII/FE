@@ -17,7 +17,11 @@ const Header = () => {
   const showGalleryButton = Boolean(sessionId);
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-10">
+    <header
+      className={`fixed top-0 right-0 left-0 z-10 ${
+        isMobileRoute ? "bg-iphone-background" : "bg-ipad-background"
+      }`}
+    >
       <div
         className={`w-full mx-auto flex items-center justify-between ${
           isMobileRoute
