@@ -55,7 +55,9 @@ const ULTRA_WIDE_LABEL_PATTERN = /ultra ?wide|울트라|초광각/i;
 
 // zoom 트랙 제약은 표준 TS DOM 타입에 없는 실험적(Safari) 속성이라 별도 타입으로 취급
 type ZoomCapableTrack = {
-  getCapabilities?: () => MediaTrackCapabilities & { zoom?: { min: number; max: number } };
+  getCapabilities?: () => MediaTrackCapabilities & {
+    zoom?: { min: number; max: number };
+  };
   applyConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
 };
 
@@ -65,9 +67,14 @@ function applyZoomIfSupported(track: MediaStreamTrack) {
   const zoomCapability = zoomTrack.getCapabilities?.()?.zoom;
   if (!zoomCapability) return;
 
-  const targetZoom = Math.min(zoomCapability.max, Math.max(zoomCapability.min, 2));
+  const targetZoom = Math.min(
+    zoomCapability.max,
+    Math.max(zoomCapability.min, 2),
+  );
   zoomTrack
-    .applyConstraints({ advanced: [{ zoom: targetZoom } as MediaTrackConstraintSet] })
+    .applyConstraints({
+      advanced: [{ zoom: targetZoom } as MediaTrackConstraintSet],
+    })
     .catch((err) => console.warn("카메라 줌 조정 실패:", err));
 }
 
@@ -82,15 +89,21 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
     const videoInputs = devices.filter((d) => d.kind === "videoinput");
 
     const currentDeviceId = currentTrack.getSettings().deviceId;
-    const currentDevice = videoInputs.find((d) => d.deviceId === currentDeviceId);
+    const currentDevice = videoInputs.find(
+      (d) => d.deviceId === currentDeviceId,
+    );
 
-    const currentIsUltraWide = ULTRA_WIDE_LABEL_PATTERN.test(currentDevice?.label ?? "");
+    const currentIsUltraWide = ULTRA_WIDE_LABEL_PATTERN.test(
+      currentDevice?.label ?? "",
+    );
     if (!currentIsUltraWide) {
       return stream;
     }
 
     const candidates = videoInputs.filter(
-      (d) => d.deviceId !== currentDeviceId && !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
+      (d) =>
+        d.deviceId !== currentDeviceId &&
+        !ULTRA_WIDE_LABEL_PATTERN.test(d.label),
     );
 
     for (const candidate of candidates) {
@@ -344,7 +357,9 @@ export function PhotoStep({
       <canvas ref={canvasRef} className="hidden" />
 
       {/* 메인 프레임 영역 (최대 너비 834px) */}
-      <main className="w-full max-w-[834px] px-6 pt-16 pb-12 flex-1 flex flex-col items-center">
+      <main
+        className={`w-full max-w-[834px] px-6 pb-12 flex-1 flex flex-col items-center ${hasRelation ? "pt-16" : "pt-38"}`}
+      >
         {/* 상단 진행률 (1/6) 및 타이머 (10) 서브 네비바 */}
         <div className="w-full max-w-[786px] flex items-center justify-between">
           <span className="text-ipad-heading-1-medium text-gray-900">

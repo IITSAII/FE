@@ -101,7 +101,10 @@ export function PaymentStep({
         onSessionCreatedRef.current?.(nextSessionId);
 
         try {
-          const status = await getSessionStatus(nextSessionId, controller.signal);
+          const status = await getSessionStatus(
+            nextSessionId,
+            controller.signal,
+          );
           if (isMounted) setStepExpiresAt(status.stepExpiresAt);
         } catch (statusErr) {
           if (!(isApiError(statusErr) && statusErr.code === "CANCELED")) {
@@ -187,7 +190,7 @@ export function PaymentStep({
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
+      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
           {stepExpiresAt && (
@@ -198,7 +201,7 @@ export function PaymentStep({
         </div>
 
         {/* 타이틀 영역 */}
-        <div className="w-full pt-15 flex flex-col items-center gap-2">
+        <div className="w-full py-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             결제를 진행해주세요!
           </h2>
@@ -207,7 +210,7 @@ export function PaymentStep({
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-20 w-full">
+        <div className="w-full h-157.25 flex items-center justify-center gap-20 pt-[91.12px] pb-[70.13px]">
           {/* 임시 프레임 */}
           <div className="w-36.5 h-109.25 flex flex-col gap-[2.26px] bg-frame-dark/80">
             <div className="w-[119.96px] h-[82.48px] bg-gray-100" />
@@ -266,7 +269,7 @@ export function PaymentStep({
         </div>
 
         {/* 결제 CTA 및 뒤로가기 */}
-        <div className="w-full flex flex-col items-start">
+        <div className="w-full flex justify-start pt-20">
           <IconButton
             variant="outline"
             onClick={onBack}
