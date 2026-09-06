@@ -90,7 +90,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[430px] mx-auto px-4.5 pb-12 gap-6 flex flex-col box-border">
+      <main className="w-full max-w-[430px] mx-auto px-4.5 pb-12 gap-[105.68px] flex flex-col box-border">
         {/* 상단: 뒤로가기 + 타이틀 */}
         <div className="w-full flex items-center justify-center relative py-3 border-b border-gray-100">
           <Link
