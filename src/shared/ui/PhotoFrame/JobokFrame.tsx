@@ -76,6 +76,7 @@ export function JobokFrame({
               <img
                 src={photoUrl}
                 alt={`Photo ${idx + 1}`}
+                crossOrigin="anonymous"
                 className={cn(
                   "w-full h-full object-cover",
                   filter === "grayscale" && "grayscale",
