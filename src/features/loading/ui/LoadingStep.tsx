@@ -26,6 +26,23 @@ function getPartnerBenefitImage(partnerName: string): string {
   return overnookBenefitImage;
 }
 
+/** 배정된 제휴업체명으로 로딩 화면에 노출할 업체 표시명을 찾는다. */
+function getPartnerDisplayName(partnerName: string): string {
+  if (partnerName.includes("피치못한")) return "피치못한";
+  if (partnerName.includes("반짝")) return "반짝이는 모든 것들";
+  if (partnerName.includes("마주하다")) return "마주하다";
+  return "overnook";
+}
+
+/** 배정된 제휴업체명으로 로딩 화면에 노출할 혜택 문구를 찾는다. */
+function getPartnerBenefitText(partnerName: string): string {
+  if (partnerName.includes("피치못한"))
+    return "아메리카노/복복에이드 300원 할인!";
+  if (partnerName.includes("반짝")) return "3번 누적 구매 시, 5% 할인!";
+  if (partnerName.includes("마주하다")) return "전상품 5% 할인!";
+  return "스탬프 +1 적립 !";
+}
+
 export interface LoadingStepProps {
   sessionId: string;
   photos?: string[];
@@ -257,10 +274,10 @@ export function LoadingStep({
             <div className="flex flex-col items-center">
               <div className="w-[191px] bg-ipad-background p-2.5 flex flex-col items-center justify-center gap-2">
                 <p className="text-iphone-heading-1-semibold text-green-950 whitespace-nowrap">
-                  {assignedPartnerName ?? "overnook"}'s Benefit
+                  {getPartnerDisplayName(assignedPartnerName ?? "")}
                 </p>
                 <p className="text-ipad-body-3-medium text-green-950 whitespace-nowrap">
-                  인화 수만큼 스탬프 적립 !
+                  {getPartnerBenefitText(assignedPartnerName ?? "")}
                 </p>
               </div>
 
