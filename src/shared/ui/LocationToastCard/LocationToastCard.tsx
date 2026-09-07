@@ -18,7 +18,7 @@ export function LocationToastCard({
   buttonLabel,
 }: LocationToastCardProps) {
   return (
-    <div className="w-full flex gap-4 items-start p-4 rounded-xl box-border border border-gray-100 bg-white/60 backdrop-blur-[6px] shadow-[0px_2px_40px_0px_rgba(0,0,0,0.1)]">
+    <div className="w-full flex gap-4 items-start p-4 rounded-xl box-border border border-gray-100 bg-white shadow-[0px_2px_40px_0px_rgba(0,0,0,0.1)]">
       <div className="w-20 h-25 rounded-[4px] shrink-0 overflow-hidden bg-gray-100">
         <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
       </div>
