@@ -88,7 +88,9 @@ export function PhotoSelectionStep({
 
     try {
       if (photoIds.length !== maxSelectCount) {
-        throw new Error("일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.");
+        throw new Error(
+          "일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.",
+        );
       }
       await selectPhotos(sessionId, photoIds);
     } catch (err) {
@@ -126,7 +128,7 @@ export function PhotoSelectionStep({
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       {/* 메인 프레임 영역 (최대 너비 834px) */}
-      <main className="w-full max-w-208.5 px-6 pt-18 pb-[53.5px] flex-1 flex flex-col justify-between">
+      <main className="w-full max-w-208.5 px-6 pt-18 pb-13 flex-1 flex flex-col justify-between">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
           <span className="text-ipad-heading-1-medium text-gray-600">
@@ -145,26 +147,24 @@ export function PhotoSelectionStep({
         </div>
 
         {/* 사진 선택 메인 구역 (좌측 4개 선택 프레임 + 우측 6개 사진 그리스) */}
-        <div className="w-full flex flex-col items-start gap-5 pb-[51px]">
+        <div className="w-full flex flex-col items-start gap-5 pb-22.5">
           <div className="w-full flex justify-end">
             <span className="text-ipad-heading-1-medium text-gray-900">
               {selectedIndices.length}/{maxSelectCount}
             </span>
           </div>
-          <div className="w-full flex items-start gap-21.25 justify-between">
+          <div className="w-full flex items-start gap-21 justify-between">
             {/* 좌측: 선택한 4장 세로 프레임 미리보기 (185px x 551px) */}
             <div className="w-46.25 h-137.75 flex flex-col gap-[2.85px] bg-frame-dark">
               {Array.from({ length: maxSelectCount }).map((_, slotIndex) => {
                 const photoIndex = selectedIndices[slotIndex];
                 const photo =
-                  photoIndex !== undefined
-                    ? capturedPhotos[photoIndex]
-                    : null;
+                  photoIndex !== undefined ? capturedPhotos[photoIndex] : null;
 
                 return (
                   <div
                     key={slotIndex}
-                    className="w-38 h-30 overflow-hidden bg-gray-100 flex items-center justify-center relative"
+                    className="w-38 h-26 overflow-hidden bg-gray-100 flex items-center justify-center relative"
                   >
                     {photo && (
                       <>

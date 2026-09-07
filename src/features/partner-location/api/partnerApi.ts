@@ -5,6 +5,8 @@ export interface AssignedPartner {
   name: string;
   location: string;
   couponDescription: string;
+  businessHours: string;
+  open: boolean;
   galleryToken: string;
 }
 

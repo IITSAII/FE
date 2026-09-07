@@ -99,9 +99,7 @@ export function PhotoFrame({
               key={idx}
               className={cn(
                 "w-full h-85.75 overflow-hidden flex items-center justify-center relative",
-                isDark
-                  ? "bg-iphone-background"
-                  : "bg-frame-dark border-4 border-green-500 box-border",
+                isDark ? "bg-iphone-background" : "bg-frame-dark",
               )}
             >
               {photoUrl && (
