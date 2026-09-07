@@ -146,8 +146,15 @@ export function LoadingStep({
 
     async function captureAndUpload() {
       try {
-        // 폰트/이미지 로딩을 한 틱 기다린 뒤 캡처한다.
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // 폰트 로딩 완료 + 2번의 rAF(레이아웃·페인트 반영)를 기다린 뒤 캡처한다.
+        // 고정된 100ms 대기로는 기기/네트워크가 느릴 때(iPad 등) 캡처 시점에 QR 캔버스나
+        // 이미지가 아직 페인트되지 않아 프레임만 캡처되는 경우가 있어 조건 기반 대기로 교체.
+        if (document.fonts?.ready) {
+          await document.fonts.ready;
+        }
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
         if (!captureNodeRef.current) {
           throw new Error("캡처할 프레임을 찾을 수 없습니다.");
         }
@@ -185,9 +192,13 @@ export function LoadingStep({
 
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
-      {/* 화면 밖 실물 크기 PhotoFrame — 최종 이미지 캡처 전용, 화면에는 보이지 않는다 */}
+      {/* 실물 크기 PhotoFrame — 최종 이미지 캡처 전용, 화면에는 보이지 않는다.
+          뷰포트 좌표 (0,0)에 두고 크기 0 + overflow-hidden인 부모로 잘라서 숨긴다.
+          `-9999px`처럼 뷰포트에서 아주 멀리 떨어뜨리면 Safari/WebKit(아이패드 등)에서
+          html-to-image가 foreignObject를 래스터화할 때 사진·QR 같은 자식 이미지/캔버스가
+          누락되는 경우가 있어(프레임 배경만 캡처됨), opacity·visibility 대신 이 방식으로 숨긴다. */}
       <div
-        className="fixed -left-[9999px] top-0 pointer-events-none"
+        className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none"
         aria-hidden
       >
         <div ref={captureNodeRef}>
