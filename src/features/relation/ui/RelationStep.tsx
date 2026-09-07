@@ -5,7 +5,6 @@ import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { submitRelationship, type RelationshipType } from "../api/relationApi";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
-import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
 
 export interface RelationOption {
   id: string;
@@ -67,7 +66,7 @@ const FRAME_RELATION_TITLE_NOT_SET = "Not Set";
  * 관계 선택 플로우 단계 컴포넌트 (RelationStep)
  * - MissionCard 컴포넌트를 합성하여 어떤 사이인지 관계 옵션을 선택하고 다음 플로우 단계로 전환합니다.
  */
-export function RelationStep({ sessionId, onNext, onBack }: RelationStepProps) {
+export function RelationStep({ sessionId, onNext }: RelationStepProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
