@@ -53,7 +53,7 @@ export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       {/* 메인 프레임 영역 (최대 너비 834px 대응) */}
-      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
+      <main className="w-full max-w-[834px] px-6 pt-18 pb-13 flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
           <span className="text-ipad-heading-1-medium text-gray-600">
@@ -62,7 +62,7 @@ export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
         </div>
 
         {/* 타이틀 영역 */}
-        <div className="w-full py-15 flex flex-col items-center gap-2">
+        <div className="w-full pt-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             수량을 선택해주세요!
           </h2>
@@ -72,7 +72,7 @@ export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
         </div>
 
         {/* 인원 수 선택 영역 (Minus Button + PersonnelCard + Plus Button) */}
-        <div className="w-full h-157.25 flex items-center justify-center gap-[47.44px] pt-[201.44px] pb-[285.56px]">
+        <div className="w-full flex items-center justify-center gap-[47.44px] pt-75 pb-91.5">
           <IconButton
             variant="secondary"
             onClick={handleDecrease}
@@ -99,7 +99,7 @@ export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
         </div>
 
         {/* 하단 우측 다음 단계 이동 버튼 */}
-        <div className="w-full flex justify-end pt-20">
+        <div className="w-full flex justify-end">
           <IconButton
             variant="primary"
             onClick={handleNextStep}

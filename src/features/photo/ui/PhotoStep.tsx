@@ -411,7 +411,7 @@ export function PhotoStep({
 
       {/* 메인 프레임 영역 (최대 너비 834px) */}
       <main
-        className={`w-full max-w-[834px] px-6 pb-12 flex-1 flex flex-col items-center ${hasRelation ? "pt-16" : "pt-38"}`}
+        className={`w-full max-w-[834px] px-6 flex-1 flex flex-col items-center ${hasRelation ? "pt-18" : "pt-43.25"}`}
       >
         {/* 상단 진행률 (1/6) 및 타이머 (10) 서브 네비바 */}
         <div className="w-full max-w-[786px] flex items-center justify-between">
@@ -428,22 +428,22 @@ export function PhotoStep({
 
         {/* 관계 설정이 켜져 있는 경우: 미션 카드 영역 상단 노출 */}
         {hasRelation && (
-          <div className="w-full pt-[51.73px]">
+          <div className="w-full pt-13">
             <MissionCard
               title={currentMission.title}
               description={currentMission.description}
               isSelected={false}
-              className="w-full mx-auto"
+              className="w-full"
             />
           </div>
         )}
 
         {/* 카메라 화면 (좌측 585px) + 세로 6개 썸네일 박스 (우측 171px) */}
         <div
-          className={`w-full max-w-[786px] flex items-start gap-7.5 h-[778px] ${hasRelation ? "pt-7" : "pt-[35.75px]"}`}
+          className={`w-full flex items-start gap-7.5 h-194.5 ${hasRelation ? "pt-12.75" : "pt-9"}`}
         >
           {/* 좌측 카메라 라이브 피드 (585px) */}
-          <div className="relative w-[585px] h-[778px] bg-gray-900 overflow-hidden shrink-0 flex items-center justify-center border-[1.5px] border-gray-300">
+          <div className="relative w-146.25 h-194.5 bg-gray-900 overflow-hidden shrink-0 flex items-center justify-center border-[1.5px] border-gray-300">
             <video
               ref={videoRef}
               autoPlay
@@ -469,14 +469,14 @@ export function PhotoStep({
           </div>
 
           {/* 우측 세로 6개 찍은 사진 썸네일 슬롯 (171px x 118px) */}
-          <div className="w-[171px] h-[778px] flex flex-col justify-between shrink-0">
+          <div className="w-42.75 h-194.5 flex flex-col justify-between shrink-0">
             {Array.from({ length: totalPhotosCount }).map((_, index) => {
               const photo = capturedPhotos[index];
 
               return (
                 <div
                   key={index}
-                  className="w-[171px] h-[118px] border transition-all overflow-hidden flex items-center justify-center bg-gray-100 border-gray-300"
+                  className="w-42.75 h-29.5 border transition-all overflow-hidden flex items-center justify-center bg-gray-100 border-gray-300"
                 >
                   {photo ? (
                     <img

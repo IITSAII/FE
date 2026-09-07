@@ -21,6 +21,8 @@ export function PartnerToast({ sessionId, partner }: PartnerToastProps) {
       name={partner.name}
       location={partner.location}
       buttonLabel={partner.couponDescription}
+      businessHours={partner.businessHours}
+      isOpen={partner.open}
     />
   );
 

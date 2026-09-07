@@ -45,7 +45,10 @@ export const THEME_CATEGORIES = [
 ];
 
 /** (디자인, 색상) 조합을 백엔드 FrameType 값으로 변환한다. */
-function toFrameType(design: FrameDesign, variant: PhotoFrameVariant): FrameType {
+function toFrameType(
+  design: FrameDesign,
+  variant: PhotoFrameVariant,
+): FrameType {
   if (design === "jobok") {
     return variant === "dark" ? "JobokDark" : "JobokPink";
   }
@@ -95,7 +98,13 @@ export function FrameStep({
       return;
     }
 
-    onNext?.({ design, variant, theme: selectedThemeId, filter, date: frameDate });
+    onNext?.({
+      design,
+      variant,
+      theme: selectedThemeId,
+      filter,
+      date: frameDate,
+    });
   };
 
   const handleNextStep = () => {
@@ -116,7 +125,7 @@ export function FrameStep({
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       {/* 메인 프레임 영역 (최대 너비 834px) */}
-      <main className="w-full max-w-[834px] px-6 pt-18 pb-[53.5px] flex-1 flex flex-col">
+      <main className="w-full max-w-[834px] px-6 pt-18 pb-13 flex-1 flex flex-col">
         {/* 서브 타이머 */}
         <div className="w-full flex justify-end">
           {status?.stepExpiresAt && (
@@ -127,7 +136,7 @@ export function FrameStep({
         </div>
 
         {/* 타이틀 영역 */}
-        <div className="w-full pt-15 pb-13 flex flex-col items-center gap-2">
+        <div className="w-full pt-15 pb-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             프레임을 정해주세요!
           </h2>
@@ -137,9 +146,9 @@ export function FrameStep({
         </div>
 
         {/* 메인 뷰: 좌측 프레임 미리보기 (452px) + 우측 테마/색상 컨트롤 (172px) */}
-        <div className="w-full flex gap-16.75">
+        <div className="w-full flex gap-16.75 pb-14.25">
           {/* 좌측: 실시간 PhotoFrame 축소 미리보기 */}
-          <div className="w-[452px] h-[691px] bg-gray-900 flex items-center justify-center overflow-hidden shrink-0">
+          <div className="w-113 h-172.75 bg-gray-900 flex items-center justify-center overflow-hidden shrink-0">
             <div className="origin-center shrink-0 scale-[0.3467]">
               {design === "jobok" ? (
                 <JobokFrame
@@ -164,9 +173,9 @@ export function FrameStep({
           </div>
 
           {/* 우측: 프레임 디자인/색상(다크/라이트) 및 브랜드 테마 선택 컨트롤 */}
-          <div className="w-[172px] flex flex-col gap-[47.27px] shrink-0 pt-[33.97px]">
+          <div className="w-66 flex flex-col gap-16 shrink-0 pt-8.5">
             {/* 1. 프레임 색상 선택 (Dark / Light) */}
-            <div className="flex flex-col gap-6.25">
+            <div className="flex flex-col gap-6">
               <h3 className="text-ipad-heading-3-medium text-black">프레임</h3>
               <div className="flex flex-wrap items-center gap-3">
                 {/* 다크 프레임 선택 버튼 */}
@@ -183,7 +192,7 @@ export function FrameStep({
                   }`}
                   aria-label="다크 프레임 선택"
                 >
-                  <Logo className="w-[59.21px] h-6 text-ipad-background" />
+                  <Logo className="w-14.75 h-6 text-ipad-background" />
                 </button>
 
                 {/* 라이트 프레임 선택 버튼 */}
@@ -200,7 +209,7 @@ export function FrameStep({
                   }`}
                   aria-label="라이트 프레임 선택"
                 >
-                  <Logo className="w-[59.21px] h-6 text-green-500" />
+                  <Logo className="w-14.75 h-6 text-green-500" />
                 </button>
 
                 {/* 조복 컬러 프레임 선택 버튼 */}
@@ -294,7 +303,7 @@ export function FrameStep({
         </div>
 
         {/* 하단 네비게이션 버튼 */}
-        <div className="w-full flex items-center justify-end pt-6.5">
+        <div className="w-full flex items-center justify-end">
           <IconButton
             variant="primary"
             onClick={handleNextStep}
