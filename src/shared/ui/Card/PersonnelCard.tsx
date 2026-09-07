@@ -36,7 +36,7 @@ export function PersonnelCard({
         </div>
 
         {/* 금액 */}
-        <div className="w-full box-border border-t border-gray-100 pt-2 px-3">
+        <div className="box-border border-t border-gray-100 pt-2 px-3">
           <span className="text-ipad-body-2-light text-gray-700 block">
             {formattedPrice}
           </span>

@@ -100,7 +100,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-500" />
           </Link>
-          <h1 className="text-iphone-heading-2-medium text-black">
+          <h1 className="text-iphone-heading-1-medium text-black leading-normal tracking-[0.4px]">
             사진 저장하기
           </h1>
         </div>

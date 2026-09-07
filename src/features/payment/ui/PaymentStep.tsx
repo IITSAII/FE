@@ -7,10 +7,15 @@ import {
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { Button } from "../../../shared/ui/Button/Button";
 import { Card } from "../../../shared/ui/Card/Card";
+import { Modal } from "../../../shared/ui/Modal/Modal";
+import { useModal } from "../../../shared/hooks/useModal";
 import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { createSession, getSessionStatus } from "../api/paymentApi";
+
+/** 결제 실패 후 재진입 시 실패 모달을 자동으로 띄우기 위한 세션 플래그. */
+const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
 
 type PaymentWindow = Awaited<
   ReturnType<TossPaymentsWidgets["renderPaymentWindow"]>
@@ -44,6 +49,20 @@ export function PaymentStep({
   const paymentWindowRef = useRef<PaymentWindow | null>(null);
   const onSessionCreatedRef = useRef(onSessionCreated);
   onSessionCreatedRef.current = onSessionCreated;
+
+  const {
+    isOpen: isFailureModalOpen,
+    openModal: openFailureModal,
+    closeModal: closeFailureModal,
+  } = useModal();
+
+  // 결제 실패로 인해 /fail에서 되돌아온 경우, 결제 실패 모달을 자동으로 띄운다.
+  useEffect(() => {
+    if (sessionStorage.getItem(PAYMENT_FAILED_FLAG_KEY) === "1") {
+      sessionStorage.removeItem(PAYMENT_FAILED_FLAG_KEY);
+      openFailureModal();
+    }
+  }, [openFailureModal]);
 
   const clientKey = import.meta.env.TOSS_CLIENT_KEY as string | undefined;
   const resolvedAmount = serverAmount ?? totalPrice;
@@ -175,17 +194,18 @@ export function PaymentStep({
         } catch (err) {
           console.error("Payment request failed:", err);
           await paymentWindow.destroy();
-          setErrorMessage(
-            "결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.",
-          );
+          openFailureModal();
         }
       });
     } catch (err) {
       console.error("Failed to open payment window:", err);
-      setErrorMessage(
-        "결제창을 여는 중 오류가 발생했습니다. 다시 시도해주세요.",
-      );
+      openFailureModal();
     }
+  };
+
+  const handleRetryPayment = () => {
+    closeFailureModal();
+    handlePayment();
   };
 
   return (
@@ -279,6 +299,18 @@ export function PaymentStep({
           </IconButton>
         </div>
       </main>
+
+      <Modal
+        isOpen={isFailureModalOpen}
+        onClose={closeFailureModal}
+        closeOnBackdropClick={false}
+        title="결제 승인에 실패하였습니다."
+        description={
+          "결제 승인이 계속 실패한다면,\n인스타그램 또는 고객센터로 문의해 주세요."
+        }
+        confirmText="결제 다시 시도하기"
+        onConfirm={handleRetryPayment}
+      />
     </div>
   );
 }

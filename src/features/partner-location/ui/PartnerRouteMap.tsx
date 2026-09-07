@@ -39,11 +39,7 @@ export function PartnerRouteMap({
         alt={`${locationLabel} 위치 안내 지도`}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <img
-        src={arrow}
-        alt=""
-        className={`absolute w-full h-auto ${variant === "pichimothan" ? "-top-20.5 -right-0.25" : "-top-11.5 -right-5"}`}
-      />
+      <img src={arrow} alt="" className={`absolute w-full h-auto`} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ const Header = () => {
   const location = useLocation();
   const isMobileRoute = location.pathname.startsWith("/intro");
   const isDownloadRoute = location.pathname.endsWith("/download");
-  const isLocationRoute = location.pathname.endsWith("/location");
+  const isLocationRoute = location.pathname.split("/").includes("location");
   const { sessionId } = useParams({ strict: false });
 
   // 사진 저장하기/위치 보기 페이지는 자체 상단바(뒤로가기+타이틀)를 갖고 있으므로

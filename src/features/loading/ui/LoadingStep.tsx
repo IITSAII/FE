@@ -12,6 +12,19 @@ import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
 import type { FrameDesign } from "../../frame/ui/FrameStep";
+import { getAssignedPartner } from "../../partner-location/api/partnerApi";
+import banjjakBenefitImage from "../assets/banjjak.png";
+import majuhadaBenefitImage from "../assets/majuhada.png";
+import overnookBenefitImage from "../assets/overnook.png";
+import pichimothanBenefitImage from "../assets/pichimothan.png";
+
+/** 배정된 제휴업체명으로 로딩 화면에 노출할 안내 이미지를 찾는다. */
+function getPartnerBenefitImage(partnerName: string): string {
+  if (partnerName.includes("피치못한")) return pichimothanBenefitImage;
+  if (partnerName.includes("반짝")) return banjjakBenefitImage;
+  if (partnerName.includes("마주하다")) return majuhadaBenefitImage;
+  return overnookBenefitImage;
+}
 
 export interface LoadingStepProps {
   sessionId: string;
@@ -62,11 +75,23 @@ export function LoadingStep({
   const [retryCount, setRetryCount] = useState(0);
   const [activePhraseCount, setActivePhraseCount] = useState(0);
   const [isPhraseSequenceDone, setIsPhraseSequenceDone] = useState(false);
+  const [assignedPartnerName, setAssignedPartnerName] = useState<
+    string | null
+  >(null);
   const onCompleteCalledRef = useRef(false);
   const captureNodeRef = useRef<HTMLDivElement>(null);
   const uploadStartedRef = useRef(false);
 
   const qrCodeUrl = buildGalleryUrl(sessionId);
+
+  // 결제 확정 시 세션에 배정된 제휴업체를 조회해 안내 이미지/문구에 반영한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    getAssignedPartner(sessionId, controller.signal)
+      .then((partner) => setAssignedPartnerName(partner.name))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [sessionId]);
 
   useEffect(() => {
     if (progress >= 100) return;
@@ -200,8 +225,16 @@ export function LoadingStep({
 
         {/* 업체 위치 및 QR 영역 */}
         <div className="w-full h-173.5 flex gap-4 items-center">
-          {/* 업체별 위치 svg 파일 */}
-          <div className="w-[519px] h-full bg-gray-100" />
+          {/* 업체별 위치 안내 이미지 */}
+          {assignedPartnerName ? (
+            <img
+              src={getPartnerBenefitImage(assignedPartnerName)}
+              alt={`${assignedPartnerName} 위치 안내`}
+              className="w-[519px] h-full object-cover"
+            />
+          ) : (
+            <div className="w-[519px] h-full bg-gray-100" />
+          )}
 
           <div className="flex flex-col justify-between w-[251px] h-full pt-[32.57px] pb-[85.89px] bg-gray-900">
             <div className="pl-[27.33px] pr-[38.67px] flex flex-col text-ipad-heading-4-medium text-iphone-background">
@@ -224,7 +257,7 @@ export function LoadingStep({
             <div className="flex flex-col items-center">
               <div className="w-[191px] bg-ipad-background p-2.5 flex flex-col items-center justify-center gap-2">
                 <p className="text-iphone-heading-1-semibold text-green-950 whitespace-nowrap">
-                  overnook's Benefit
+                  {assignedPartnerName ?? "overnook"}'s Benefit
                 </p>
                 <p className="text-ipad-body-3-medium text-green-950 whitespace-nowrap">
                   인화 수만큼 스탬프 적립 !
