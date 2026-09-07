@@ -26,7 +26,7 @@ export function CompanyLocationPage({ companyId }: CompanyLocationPageProps) {
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-900" />
           </Link>
-          <p className="text-iphone-heading-2-medium text-black">
+          <p className="text-iphone-heading-1-medium text-black leading-normal tracking-[0.4px]">
             {info ? `${info.name} 위치보기` : "위치보기"}
           </p>
         </div>
