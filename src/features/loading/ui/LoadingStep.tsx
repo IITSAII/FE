@@ -92,9 +92,9 @@ export function LoadingStep({
   const [retryCount, setRetryCount] = useState(0);
   const [activePhraseCount, setActivePhraseCount] = useState(0);
   const [isPhraseSequenceDone, setIsPhraseSequenceDone] = useState(false);
-  const [assignedPartnerName, setAssignedPartnerName] = useState<
-    string | null
-  >(null);
+  const [assignedPartnerName, setAssignedPartnerName] = useState<string | null>(
+    null,
+  );
   const onCompleteCalledRef = useRef(false);
   const captureNodeRef = useRef<HTMLDivElement>(null);
   const uploadStartedRef = useRef(false);
@@ -186,7 +186,10 @@ export function LoadingStep({
   return (
     <div className="relative min-h-screen bg-ipad-background font-primary flex flex-col items-center">
       {/* 화면 밖 실물 크기 PhotoFrame — 최종 이미지 캡처 전용, 화면에는 보이지 않는다 */}
-      <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden>
+      <div
+        className="fixed -left-[9999px] top-0 pointer-events-none"
+        aria-hidden
+      >
         <div ref={captureNodeRef}>
           {design === "jobok" ? (
             <JobokFrame
@@ -211,9 +214,9 @@ export function LoadingStep({
       </div>
 
       {/* 메인 프레임 영역 (최대 너비 834px) */}
-      <main className="w-full max-w-[834px] px-6 pt-43.75 pb-[53.5px] flex-1 flex flex-col">
+      <main className="w-full max-w-[834px] px-6 pt-43.75 flex-1 flex flex-col">
         {/* 타이틀 영역 */}
-        <div className="w-full pt-15 pb-13 flex flex-col items-center gap-2">
+        <div className="w-full pb-15 flex flex-col items-center gap-2">
           <h2 className="text-ipad-heading-2-medium text-black">
             사진을 인화 중입니다!
           </h2>
@@ -241,20 +244,20 @@ export function LoadingStep({
         </div>
 
         {/* 업체 위치 및 QR 영역 */}
-        <div className="w-full h-173.5 flex gap-4 items-center">
+        <div className="w-full h-173.75 flex gap-4 items-center">
           {/* 업체별 위치 안내 이미지 */}
           {assignedPartnerName ? (
             <img
               src={getPartnerBenefitImage(assignedPartnerName)}
               alt={`${assignedPartnerName} 위치 안내`}
-              className="w-[519px] h-full object-cover"
+              className="w-129.75 h-full object-cover"
             />
           ) : (
-            <div className="w-[519px] h-full bg-gray-100" />
+            <div className="w-129.75 h-full bg-gray-100" />
           )}
 
-          <div className="flex flex-col justify-between w-[251px] h-full pt-[32.57px] pb-[85.89px] bg-gray-900">
-            <div className="pl-[27.33px] pr-[38.67px] flex flex-col text-ipad-heading-4-medium text-iphone-background">
+          <div className="flex flex-col justify-between items-center w-62.75 h-full pt-7.75 pb-22 bg-gray-900">
+            <div className="flex flex-col text-ipad-heading-4-medium text-iphone-background">
               {LOADING_PHRASES.map((phrase, index) => {
                 const isActive = index < activePhraseCount;
                 return (
@@ -272,7 +275,7 @@ export function LoadingStep({
 
             {/* QR 영역 */}
             <div className="flex flex-col items-center">
-              <div className="w-[191px] bg-ipad-background p-2.5 flex flex-col items-center justify-center gap-2">
+              <div className="w-47.75 bg-ipad-background p-2.5 flex flex-col items-center justify-center gap-2">
                 <p className="text-iphone-heading-1-semibold text-green-950 whitespace-nowrap">
                   {getPartnerDisplayName(assignedPartnerName ?? "")}
                 </p>
@@ -283,7 +286,7 @@ export function LoadingStep({
 
               <div className="size-6.5 bg-ipad-background" />
 
-              <div className="size-[190px] bg-ipad-background flex justify-center items-center">
+              <div className="size-47.5 bg-ipad-background flex justify-center items-center">
                 <QrCode
                   url={qrCodeUrl}
                   size={150}
