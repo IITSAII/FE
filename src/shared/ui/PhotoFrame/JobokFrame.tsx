@@ -102,11 +102,15 @@ export function JobokFrame({
         )}
       </div>
 
-      {/* 프레임 SVG: 사진/QR 위에 겹친다. 사진/QR 슬롯 자리는 SVG 자체에서 투명하게 뚫려 있다. */}
+      {/* 프레임 SVG: 사진/QR 위에 겹친다. 사진/QR 슬롯 자리는 SVG 자체에서 투명하게 뚫려 있다.
+          사진 슬롯들과 동일하게 crossOrigin을 지정해야 한다 — 없으면 정적 자산이 별도
+          오리진(CDN 등)에서 서빙되는 배포 환경에서 캔버스가 오염되어(tainted canvas)
+          html-to-image의 toBlob 캡처가 통째로 실패할 수 있다(LoadingStep 참고). */}
       <img
         src={frameUrl}
         alt=""
         draggable={false}
+        crossOrigin="anonymous"
         className="absolute inset-0 w-full h-full pointer-events-none"
       />
 
