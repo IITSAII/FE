@@ -87,6 +87,41 @@ async function waitForCanvasesAndSvgs(node: HTMLElement): Promise<void> {
 }
 
 /**
+ * 캡처 직전 노드 상태(사진 img 로드 여부, 캔버스/svg 페인트 여부, 결과 blob 크기)를
+ * 콘솔에 남긴다. #66/#69에서 시도한 수정이 실제 기기(iPad)에서도 여전히 재현되는
+ * 원인 불명 캡처 누락 버그를 진단하기 위한 임시 로깅으로, 원인이 확정되면 제거한다.
+ */
+function logCaptureDiagnostics(
+  node: HTMLElement,
+  attempt: number,
+  blob: Blob | null,
+): void {
+  const images = Array.from(node.querySelectorAll("img")).map((img) => ({
+    src: img.src.slice(0, 40),
+    complete: img.complete,
+    naturalWidth: img.naturalWidth,
+    naturalHeight: img.naturalHeight,
+  }));
+  const canvases = Array.from(node.querySelectorAll("canvas")).map(
+    (canvas) => ({
+      width: canvas.width,
+      height: canvas.height,
+      painted: isCanvasPainted(canvas),
+    }),
+  );
+  const svgs = Array.from(node.querySelectorAll("svg")).map((svg) => ({
+    childElementCount: svg.childElementCount,
+  }));
+
+  console.log(`[CAPTURE-DEBUG] attempt=${attempt}`, {
+    images,
+    canvases,
+    svgs,
+    blobSize: blob?.size ?? null,
+  });
+}
+
+/**
  * 화면 밖에 렌더링된 `PhotoFrame` DOM 노드를 PNG Blob으로 캡처한다.
  * `POST /print/final-image` 업로드에 그대로 사용된다.
  */
@@ -99,6 +134,8 @@ export async function exportFrameImage(node: HTMLElement): Promise<Blob> {
       pixelRatio: 1,
       cacheBust: true,
     });
+
+    logCaptureDiagnostics(node, attempt, blob);
 
     if (blob) return blob;
 
