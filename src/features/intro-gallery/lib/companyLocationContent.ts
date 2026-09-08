@@ -49,3 +49,17 @@ export const COMPANY_LOCATION_INFO: Partial<
     variant: "naver-map",
   },
 };
+
+/**
+ * 배정된 제휴업체명으로 정적 업체 위치 정보를 찾는다.
+ * `/intro`와 `/intro/{sessionId}`가 같은 썸네일 이미지를 쓰도록,
+ * PartnerToast에서도 API가 내려주는 로고 대신 이 정적 이미지를 사용한다.
+ */
+export function getCompanyLocationInfoByPartnerName(
+  partnerName: string,
+): CompanyLocationInfo | undefined {
+  return Object.values(COMPANY_LOCATION_INFO).find(
+    (info): info is CompanyLocationInfo =>
+      info !== undefined && partnerName.includes(info.name),
+  );
+}
