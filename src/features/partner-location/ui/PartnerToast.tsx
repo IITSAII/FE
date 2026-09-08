@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { getCompanyLocationInfoByPartnerName } from "../../intro-gallery/lib/companyLocationContent";
 import { LocationToastCard } from "../../../shared/ui/LocationToastCard/LocationToastCard";
 import type { AssignedPartner } from "../api/partnerApi";
 import { getNaverMapSearchUrl, getPartnerLocationVariant } from "../lib/partnerMatch";
@@ -15,9 +16,10 @@ export interface PartnerToastProps {
  */
 export function PartnerToast({ sessionId, partner }: PartnerToastProps) {
   const variant = getPartnerLocationVariant(partner.name);
+  const companyInfo = getCompanyLocationInfoByPartnerName(partner.name);
   const card = (
     <LocationToastCard
-      imageUrl={partner.logoUrl}
+      imageUrl={companyInfo?.image ?? partner.logoUrl}
       name={partner.name}
       location={partner.location}
       buttonLabel={partner.couponDescription}
