@@ -81,9 +81,9 @@ export function RefundPolicyPage() {
                 </p>
                 <div className="flex flex-col text-iphone-body-2-regular text-gray-700">
                   {section.body.map((line, lineIndex) => (
-                    <div key={lineIndex} className="flex gap-2 ps-5">
+                    <div key={lineIndex} className="flex gap-2 ps-0.5">
                       <span
-                        className="mt-[9px] size-1 shrink-0 rounded-full bg-current"
+                        className="mt-[9px] size-0.75 shrink-0 rounded-full bg-current"
                         aria-hidden="true"
                       />
                       <span>{line}</span>
