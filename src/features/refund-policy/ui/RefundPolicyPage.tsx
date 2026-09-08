@@ -49,17 +49,17 @@ export function RefundPolicyPage() {
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[430px] mx-auto flex flex-col box-border">
-        <div className="w-full flex items-center justify-between bg-iphone-background border-b border-gray-100 px-4.5 py-3">
+      <main className="w-full max-w-[430px] mx-auto flex flex-col box-border gap-6">
+        <div className="w-full flex items-center justify-center relative bg-iphone-background border-b border-gray-100 px-4.5 py-3">
           <button
             type="button"
             onClick={() => router.history.back()}
             aria-label="이전 화면으로 이동"
+            className="absolute left-0"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-900" />
           </button>
           <p className="text-iphone-heading-2-medium text-black">환불 정책</p>
-          <div className="w-6 h-6" aria-hidden="true" />
         </div>
 
         <div className="w-full bg-white px-6 pt-5 pb-8 flex flex-col gap-6">
@@ -72,20 +72,27 @@ export function RefundPolicyPage() {
             </p>
           </div>
 
-          <ol className="flex flex-col gap-4 list-decimal ps-6">
+          <div className="flex flex-col gap-4">
             {REFUND_POLICY_SECTIONS.map((section, index) => (
-              <li key={index} className="flex flex-col gap-1">
-                <p className="text-iphone-heading-2-medium text-gray-800">
-                  {section.title}
+              <div key={index} className="flex flex-col gap-1">
+                <p className="flex gap-1 text-iphone-heading-2-medium text-gray-800">
+                  <span>{index + 1}.</span>
+                  <span>{section.title}</span>
                 </p>
-                <ul className="flex flex-col list-disc ps-5 text-iphone-body-2-regular text-gray-700">
+                <div className="flex flex-col text-iphone-body-2-regular text-gray-700">
                   {section.body.map((line, lineIndex) => (
-                    <li key={lineIndex}>{line}</li>
+                    <div key={lineIndex} className="flex gap-2 ps-5">
+                      <span
+                        className="mt-[9px] size-1 shrink-0 rounded-full bg-current"
+                        aria-hidden="true"
+                      />
+                      <span>{line}</span>
+                    </div>
                   ))}
-                </ul>
-              </li>
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       </main>
     </div>

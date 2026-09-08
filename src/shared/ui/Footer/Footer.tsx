@@ -31,10 +31,10 @@ const Footer = () => {
               <span>|</span>
               <span>대표 : 장지수</span>
               <span>|</span>
-              <span>세종특별자치시 조치원읍 섭골길 97 1층</span>
+              <span>세종특별자치시 조치원읍 섭골길 97</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Link to="/refund-policy" className="font-semibold">
+              <Link to="/refund-policy" className="text-iphone-body-1-semibold">
                 환불 정책
               </Link>
               <span>|</span>
