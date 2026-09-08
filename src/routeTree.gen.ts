@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FailRouteImport } from './routes/fail'
 import { Route as IntroRouteImport } from './routes/intro'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as TestRouteImport } from './routes/test'
 import { Route as IntroIndexRouteImport } from './routes/intro.index'
@@ -34,6 +35,11 @@ const FailRoute = FailRouteImport.update({
 const IntroRoute = IntroRouteImport.update({
   id: '/intro',
   path: '/intro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuccessRoute = SuccessRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
+  '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
   '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
   '/intro': typeof IntroIndexRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
+  '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
   '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fail'
     | '/intro'
+    | '/refund-policy'
     | '/success'
     | '/test'
     | '/intro/$sessionId'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/fail'
+    | '/refund-policy'
     | '/success'
     | '/test'
     | '/intro'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fail'
     | '/intro'
+    | '/refund-policy'
     | '/success'
     | '/test'
     | '/intro/$sessionId'
@@ -159,6 +171,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FailRoute: typeof FailRoute
   IntroRoute: typeof IntroRouteWithChildren
+  RefundPolicyRoute: typeof RefundPolicyRoute
   SuccessRoute: typeof SuccessRoute
   TestRoute: typeof TestRoute
 }
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       path: '/intro'
       fullPath: '/intro'
       preLoaderRoute: typeof IntroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/success': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FailRoute: FailRoute,
   IntroRoute: IntroRouteWithChildren,
+  RefundPolicyRoute: RefundPolicyRoute,
   SuccessRoute: SuccessRoute,
   TestRoute: TestRoute,
 }
