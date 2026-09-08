@@ -5,7 +5,7 @@ import {
 } from "../../../shared/ui/CategoryTabs/CategoryTabs";
 import { isApiError } from "../../../shared/lib/apiError";
 import {
-  getAssignedPartner,
+  getAssignedPartnerByGalleryToken,
   type AssignedPartner,
 } from "../../partner-location/api/partnerApi";
 import { PartnerToast } from "../../partner-location/ui/PartnerToast";
@@ -23,25 +23,29 @@ const CATEGORIES: CategoryTabItem[] = [
   { id: "pichimothan", name: "피치못한" },
 ];
 
-/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(SESSION_404_2)가 날 수 있어 재시도한다. */
+/**
+ * 결제 확정 직후엔 배정이 아직 끝나지 않아 404(SESSION_404_2)가 날 수 있어 재시도한다.
+ * TODO: galleryToken 기반 조회(`GET /gallery/{galleryToken}`)도 미배정 시 동일한
+ * SESSION_404_2를 내려주는지 백엔드와 확인 필요 — 다르면 이 에러 코드 체크도 맞춰 수정.
+ */
 const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
 const PARTNER_FETCH_MAX_RETRIES = 5;
 
 export interface IntroGalleryPageProps {
-  /** QR로 진입한 `/intro/{sessionId}`에서만 전달된다. 있을 때만 배정된 업체 토스트와 혜택 안내 모달을 보여준다. */
-  sessionId?: string;
+  /** QR로 진입한 `/intro/{galleryToken}`에서만 전달된다. 있을 때만 배정된 업체 토스트와 혜택 안내 모달을 보여준다. */
+  galleryToken?: string;
 }
 
 /**
- * `/intro`(파라미터 없음)와 `/intro/{sessionId}`(QR 진입)가 공유하는 매거진/브랜드 템플릿 갤러리 화면.
+ * `/intro`(파라미터 없음)와 `/intro/{galleryToken}`(QR 진입)가 공유하는 매거진/브랜드 템플릿 갤러리 화면.
  */
-export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
+export function IntroGalleryPage({ galleryToken }: IntroGalleryPageProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState("overnook");
   const [partner, setPartner] = useState<AssignedPartner | null>(null);
   const benefitModal = useModal();
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!galleryToken) return;
 
     setPartner(null);
     let isMounted = true;
@@ -49,7 +53,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
     const controller = new AbortController();
 
     function fetchPartner(attempt: number) {
-      getAssignedPartner(sessionId!, controller.signal)
+      getAssignedPartnerByGalleryToken(galleryToken!, controller.signal)
         .then((result) => {
           if (isMounted) {
             setPartner(result);
@@ -83,7 +87,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
       clearTimeout(retryTimer);
       controller.abort();
     };
-  }, [sessionId, benefitModal.openModal]);
+  }, [galleryToken, benefitModal.openModal]);
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
@@ -108,15 +112,15 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
         />
       </main>
 
-      {sessionId && partner && (
-        <PartnerToast sessionId={sessionId} partner={partner} />
+      {galleryToken && partner && (
+        <PartnerToast galleryToken={galleryToken} partner={partner} />
       )}
 
-      {!sessionId && (
+      {!galleryToken && (
         <CategoryLocationToast selectedCategoryId={selectedCategoryId} />
       )}
 
-      {sessionId && partner && (
+      {galleryToken && partner && (
         <Modal
           isOpen={benefitModal.isOpen}
           onClose={benefitModal.closeModal}

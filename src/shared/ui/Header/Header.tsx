@@ -8,14 +8,14 @@ const Header = () => {
   const isDownloadRoute = location.pathname.endsWith("/download");
   const isLocationRoute = location.pathname.split("/").includes("location");
   const isRefundPolicyRoute = location.pathname === "/refund-policy";
-  const { sessionId } = useParams({ strict: false });
+  const { galleryToken } = useParams({ strict: false });
 
   // 사진 저장하기/위치 보기/환불 정책 페이지는 자체 상단바(뒤로가기+타이틀)를 갖고 있으므로
   // 전역 Header(로고+갤러리 버튼)를 노출하지 않는다.
   if (isDownloadRoute || isLocationRoute || isRefundPolicyRoute) return null;
 
-  // sessionId가 있는 `/intro/{sessionId}`(QR 진입)에서만 사진 아이콘 버튼을 노출한다.
-  const showGalleryButton = Boolean(sessionId);
+  // galleryToken이 있는 `/intro/{galleryToken}`(QR 진입)에서만 사진 아이콘 버튼을 노출한다.
+  const showGalleryButton = Boolean(galleryToken);
 
   return (
     <header
@@ -35,8 +35,8 @@ const Header = () => {
         </Link>
         {showGalleryButton && (
           <Link
-            to="/intro/$sessionId/download"
-            params={{ sessionId: sessionId as string }}
+            to="/intro/$galleryToken/download"
+            params={{ galleryToken: galleryToken as string }}
             aria-label="촬영한 프레임 다운로드하기"
           >
             <ImageIcon className="w-6 h-6 text-gray-900" />

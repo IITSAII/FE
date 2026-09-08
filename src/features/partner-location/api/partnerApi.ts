@@ -24,3 +24,18 @@ export async function getAssignedPartner(
   );
   return data;
 }
+
+/**
+ * galleryToken으로 배정된 제휴업체 정보를 조회한다(만료 없음).
+ * QR로 진입하는 `/intro/{galleryToken}` 갤러리 화면에서 사용한다.
+ */
+export async function getAssignedPartnerByGalleryToken(
+  galleryToken: string,
+  signal?: AbortSignal,
+): Promise<AssignedPartner> {
+  const { data } = await api.get<AssignedPartner>(
+    `/gallery/${galleryToken}`,
+    { signal },
+  );
+  return data;
+}

@@ -16,10 +16,10 @@ import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as TestRouteImport } from './routes/test'
 import { Route as IntroIndexRouteImport } from './routes/intro.index'
-import { Route as IntroSessionIdRouteImport } from './routes/intro.$sessionId'
-import { Route as IntroSessionIdIndexRouteImport } from './routes/intro.$sessionId.index'
-import { Route as IntroSessionIdDownloadRouteImport } from './routes/intro.$sessionId.download'
-import { Route as IntroSessionIdLocationRouteImport } from './routes/intro.$sessionId.location'
+import { Route as IntroGalleryTokenRouteImport } from './routes/intro.$galleryToken'
+import { Route as IntroGalleryTokenIndexRouteImport } from './routes/intro.$galleryToken.index'
+import { Route as IntroGalleryTokenDownloadRouteImport } from './routes/intro.$galleryToken.download'
+import { Route as IntroGalleryTokenLocationRouteImport } from './routes/intro.$galleryToken.location'
 import { Route as IntroLocationCompanyIdRouteImport } from './routes/intro.location.$companyId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -57,26 +57,28 @@ const IntroIndexRoute = IntroIndexRouteImport.update({
   path: '/',
   getParentRoute: () => IntroRoute,
 } as any)
-const IntroSessionIdRoute = IntroSessionIdRouteImport.update({
-  id: '/$sessionId',
-  path: '/$sessionId',
+const IntroGalleryTokenRoute = IntroGalleryTokenRouteImport.update({
+  id: '/$galleryToken',
+  path: '/$galleryToken',
   getParentRoute: () => IntroRoute,
 } as any)
-const IntroSessionIdIndexRoute = IntroSessionIdIndexRouteImport.update({
+const IntroGalleryTokenIndexRoute = IntroGalleryTokenIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => IntroSessionIdRoute,
+  getParentRoute: () => IntroGalleryTokenRoute,
 } as any)
-const IntroSessionIdDownloadRoute = IntroSessionIdDownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => IntroSessionIdRoute,
-} as any)
-const IntroSessionIdLocationRoute = IntroSessionIdLocationRouteImport.update({
-  id: '/location',
-  path: '/location',
-  getParentRoute: () => IntroSessionIdRoute,
-} as any)
+const IntroGalleryTokenDownloadRoute =
+  IntroGalleryTokenDownloadRouteImport.update({
+    id: '/download',
+    path: '/download',
+    getParentRoute: () => IntroGalleryTokenRoute,
+  } as any)
+const IntroGalleryTokenLocationRoute =
+  IntroGalleryTokenLocationRouteImport.update({
+    id: '/location',
+    path: '/location',
+    getParentRoute: () => IntroGalleryTokenRoute,
+  } as any)
 const IntroLocationCompanyIdRoute = IntroLocationCompanyIdRouteImport.update({
   id: '/location/$companyId',
   path: '/location/$companyId',
@@ -90,12 +92,12 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
-  '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
+  '/intro/$galleryToken': typeof IntroGalleryTokenRouteWithChildren
   '/intro/': typeof IntroIndexRoute
-  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
-  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$galleryToken/download': typeof IntroGalleryTokenDownloadRoute
+  '/intro/$galleryToken/location': typeof IntroGalleryTokenLocationRoute
   '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
-  '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
+  '/intro/$galleryToken/': typeof IntroGalleryTokenIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -104,10 +106,10 @@ export interface FileRoutesByTo {
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
   '/intro': typeof IntroIndexRoute
-  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
-  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$galleryToken/download': typeof IntroGalleryTokenDownloadRoute
+  '/intro/$galleryToken/location': typeof IntroGalleryTokenLocationRoute
   '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
-  '/intro/$sessionId': typeof IntroSessionIdIndexRoute
+  '/intro/$galleryToken': typeof IntroGalleryTokenIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,12 +119,12 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
-  '/intro/$sessionId': typeof IntroSessionIdRouteWithChildren
+  '/intro/$galleryToken': typeof IntroGalleryTokenRouteWithChildren
   '/intro/': typeof IntroIndexRoute
-  '/intro/$sessionId/download': typeof IntroSessionIdDownloadRoute
-  '/intro/$sessionId/location': typeof IntroSessionIdLocationRoute
+  '/intro/$galleryToken/download': typeof IntroGalleryTokenDownloadRoute
+  '/intro/$galleryToken/location': typeof IntroGalleryTokenLocationRoute
   '/intro/location/$companyId': typeof IntroLocationCompanyIdRoute
-  '/intro/$sessionId/': typeof IntroSessionIdIndexRoute
+  '/intro/$galleryToken/': typeof IntroGalleryTokenIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,12 +135,12 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/success'
     | '/test'
-    | '/intro/$sessionId'
+    | '/intro/$galleryToken'
     | '/intro/'
-    | '/intro/$sessionId/download'
-    | '/intro/$sessionId/location'
+    | '/intro/$galleryToken/download'
+    | '/intro/$galleryToken/location'
     | '/intro/location/$companyId'
-    | '/intro/$sessionId/'
+    | '/intro/$galleryToken/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -147,10 +149,10 @@ export interface FileRouteTypes {
     | '/success'
     | '/test'
     | '/intro'
-    | '/intro/$sessionId/download'
-    | '/intro/$sessionId/location'
+    | '/intro/$galleryToken/download'
+    | '/intro/$galleryToken/location'
     | '/intro/location/$companyId'
-    | '/intro/$sessionId'
+    | '/intro/$galleryToken'
   id:
     | '__root__'
     | '/'
@@ -159,12 +161,12 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/success'
     | '/test'
-    | '/intro/$sessionId'
+    | '/intro/$galleryToken'
     | '/intro/'
-    | '/intro/$sessionId/download'
-    | '/intro/$sessionId/location'
+    | '/intro/$galleryToken/download'
+    | '/intro/$galleryToken/location'
     | '/intro/location/$companyId'
-    | '/intro/$sessionId/'
+    | '/intro/$galleryToken/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,33 +229,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntroIndexRouteImport
       parentRoute: typeof IntroRoute
     }
-    '/intro/$sessionId': {
-      id: '/intro/$sessionId'
-      path: '/$sessionId'
-      fullPath: '/intro/$sessionId'
-      preLoaderRoute: typeof IntroSessionIdRouteImport
+    '/intro/$galleryToken': {
+      id: '/intro/$galleryToken'
+      path: '/$galleryToken'
+      fullPath: '/intro/$galleryToken'
+      preLoaderRoute: typeof IntroGalleryTokenRouteImport
       parentRoute: typeof IntroRoute
     }
-    '/intro/$sessionId/': {
-      id: '/intro/$sessionId/'
+    '/intro/$galleryToken/': {
+      id: '/intro/$galleryToken/'
       path: '/'
-      fullPath: '/intro/$sessionId/'
-      preLoaderRoute: typeof IntroSessionIdIndexRouteImport
-      parentRoute: typeof IntroSessionIdRoute
+      fullPath: '/intro/$galleryToken/'
+      preLoaderRoute: typeof IntroGalleryTokenIndexRouteImport
+      parentRoute: typeof IntroGalleryTokenRoute
     }
-    '/intro/$sessionId/download': {
-      id: '/intro/$sessionId/download'
+    '/intro/$galleryToken/download': {
+      id: '/intro/$galleryToken/download'
       path: '/download'
-      fullPath: '/intro/$sessionId/download'
-      preLoaderRoute: typeof IntroSessionIdDownloadRouteImport
-      parentRoute: typeof IntroSessionIdRoute
+      fullPath: '/intro/$galleryToken/download'
+      preLoaderRoute: typeof IntroGalleryTokenDownloadRouteImport
+      parentRoute: typeof IntroGalleryTokenRoute
     }
-    '/intro/$sessionId/location': {
-      id: '/intro/$sessionId/location'
+    '/intro/$galleryToken/location': {
+      id: '/intro/$galleryToken/location'
       path: '/location'
-      fullPath: '/intro/$sessionId/location'
-      preLoaderRoute: typeof IntroSessionIdLocationRouteImport
-      parentRoute: typeof IntroSessionIdRoute
+      fullPath: '/intro/$galleryToken/location'
+      preLoaderRoute: typeof IntroGalleryTokenLocationRouteImport
+      parentRoute: typeof IntroGalleryTokenRoute
     }
     '/intro/location/$companyId': {
       id: '/intro/location/$companyId'
@@ -265,30 +267,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface IntroSessionIdRouteChildren {
-  IntroSessionIdDownloadRoute: typeof IntroSessionIdDownloadRoute
-  IntroSessionIdLocationRoute: typeof IntroSessionIdLocationRoute
-  IntroSessionIdIndexRoute: typeof IntroSessionIdIndexRoute
+interface IntroGalleryTokenRouteChildren {
+  IntroGalleryTokenDownloadRoute: typeof IntroGalleryTokenDownloadRoute
+  IntroGalleryTokenLocationRoute: typeof IntroGalleryTokenLocationRoute
+  IntroGalleryTokenIndexRoute: typeof IntroGalleryTokenIndexRoute
 }
 
-const IntroSessionIdRouteChildren: IntroSessionIdRouteChildren = {
-  IntroSessionIdDownloadRoute: IntroSessionIdDownloadRoute,
-  IntroSessionIdLocationRoute: IntroSessionIdLocationRoute,
-  IntroSessionIdIndexRoute: IntroSessionIdIndexRoute,
+const IntroGalleryTokenRouteChildren: IntroGalleryTokenRouteChildren = {
+  IntroGalleryTokenDownloadRoute: IntroGalleryTokenDownloadRoute,
+  IntroGalleryTokenLocationRoute: IntroGalleryTokenLocationRoute,
+  IntroGalleryTokenIndexRoute: IntroGalleryTokenIndexRoute,
 }
 
-const IntroSessionIdRouteWithChildren = IntroSessionIdRoute._addFileChildren(
-  IntroSessionIdRouteChildren,
-)
+const IntroGalleryTokenRouteWithChildren =
+  IntroGalleryTokenRoute._addFileChildren(IntroGalleryTokenRouteChildren)
 
 interface IntroRouteChildren {
-  IntroSessionIdRoute: typeof IntroSessionIdRouteWithChildren
+  IntroGalleryTokenRoute: typeof IntroGalleryTokenRouteWithChildren
   IntroIndexRoute: typeof IntroIndexRoute
   IntroLocationCompanyIdRoute: typeof IntroLocationCompanyIdRoute
 }
 
 const IntroRouteChildren: IntroRouteChildren = {
-  IntroSessionIdRoute: IntroSessionIdRouteWithChildren,
+  IntroGalleryTokenRoute: IntroGalleryTokenRouteWithChildren,
   IntroIndexRoute: IntroIndexRoute,
   IntroLocationCompanyIdRoute: IntroLocationCompanyIdRoute,
 }
