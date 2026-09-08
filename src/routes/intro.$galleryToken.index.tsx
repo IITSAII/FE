@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { IntroGalleryPage } from "../features/intro-gallery/ui/IntroGalleryPage";
 
-export const Route = createFileRoute("/intro/$sessionId/")({
+export const Route = createFileRoute("/intro/$galleryToken/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { sessionId } = Route.useParams();
-  return <IntroGalleryPage sessionId={sessionId} />;
+  const { galleryToken } = Route.useParams();
+  return <IntroGalleryPage galleryToken={galleryToken} />;
 }

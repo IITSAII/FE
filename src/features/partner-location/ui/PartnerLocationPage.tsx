@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
-import { getAssignedPartner, type AssignedPartner } from "../api/partnerApi";
+import {
+  getAssignedPartnerByGalleryToken,
+  type AssignedPartner,
+} from "../api/partnerApi";
 import { getPartnerLocationVariant } from "../lib/partnerMatch";
 import { PartnerRouteMap } from "./PartnerRouteMap";
 
 export interface PartnerLocationPageProps {
-  sessionId: string;
+  galleryToken: string;
 }
 
 type LoadState =
@@ -19,7 +22,9 @@ type LoadState =
  * 배정된 제휴업체 위치를 안내하는 화면. 피치못한/반짝의 위치 보기 전용 페이지로,
  * 그 외(overnook, 마주하다)는 토스트 카드에서 바로 네이버 지도 검색으로 연결되어 이 페이지로 오지 않는다.
  */
-export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
+export function PartnerLocationPage({
+  galleryToken,
+}: PartnerLocationPageProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -29,7 +34,10 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
     async function fetchPartner() {
       setState({ status: "loading" });
       try {
-        const partner = await getAssignedPartner(sessionId, controller.signal);
+        const partner = await getAssignedPartnerByGalleryToken(
+          galleryToken,
+          controller.signal,
+        );
         if (isMounted) setState({ status: "ready", partner });
       } catch (err) {
         if (isApiError(err) && err.code === "CANCELED") return;
@@ -48,7 +56,7 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
       isMounted = false;
       controller.abort();
     };
-  }, [sessionId]);
+  }, [galleryToken]);
 
   const partnerName = state.status === "ready" ? state.partner.name : "";
 
@@ -58,8 +66,8 @@ export function PartnerLocationPage({ sessionId }: PartnerLocationPageProps) {
         {/* 헤더: 뒤로가기 + 타이틀 */}
         <div className=" w-full flex items-center justify-between bg-iphone-background border-b border-gray-100 px-4.5 py-3">
           <Link
-            to="/intro/$sessionId"
-            params={{ sessionId }}
+            to="/intro/$galleryToken"
+            params={{ galleryToken }}
             aria-label="이전 화면으로 이동"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-900" />

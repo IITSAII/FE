@@ -12,7 +12,11 @@ import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
 import type { FrameDesign } from "../../frame/ui/FrameStep";
-import { getAssignedPartner } from "../../partner-location/api/partnerApi";
+import {
+  getAssignedPartner,
+  type AssignedPartner,
+} from "../../partner-location/api/partnerApi";
+import { isApiError } from "../../../shared/lib/apiError";
 import banjjakBenefitImage from "../assets/banjjak.png";
 import majuhadaBenefitImage from "../assets/majuhada.png";
 import overnookBenefitImage from "../assets/overnook.png";
@@ -69,6 +73,10 @@ const PHRASE_REVEAL_INTERVAL_MS = 1000;
 /** 마지막 줄까지 다 밝아진 뒤 추가로 대기하는 시간(ms) */
 const PHRASE_REVEAL_HOLD_MS = 5000;
 
+/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(SESSION_404_2)가 날 수 있어 재시도한다. */
+const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
+const PARTNER_FETCH_MAX_RETRIES = 5;
+
 /**
  * 사진 인화 및 출력 로딩 플로우 단계 컴포넌트 (LoadingStep)
  * - 화면 밖에 실물 크기 PhotoFrame을 렌더링해 최종 이미지로 캡처, 서버에 업로드한다.
@@ -92,23 +100,63 @@ export function LoadingStep({
   const [retryCount, setRetryCount] = useState(0);
   const [activePhraseCount, setActivePhraseCount] = useState(0);
   const [isPhraseSequenceDone, setIsPhraseSequenceDone] = useState(false);
-  const [assignedPartnerName, setAssignedPartnerName] = useState<string | null>(
-    null,
-  );
+  const [assignedPartner, setAssignedPartner] =
+    useState<AssignedPartner | null>(null);
+  const [partnerFetchFailed, setPartnerFetchFailed] = useState(false);
   const onCompleteCalledRef = useRef(false);
   const captureNodeRef = useRef<HTMLDivElement>(null);
   const uploadStartedRef = useRef(false);
 
-  const qrCodeUrl = buildGalleryUrl(sessionId);
+  const assignedPartnerName = assignedPartner?.name ?? null;
+  // QR/실물 프레임에 박히는 URL은 galleryToken 기반이라, 업체 배정(galleryToken 확보) 전에는
+  // 아직 만들 수 없다 — undefined인 동안은 캡처도, 화면 QR도 시작하지 않는다.
+  const qrCodeUrl = assignedPartner
+    ? buildGalleryUrl(assignedPartner.galleryToken)
+    : undefined;
 
-  // 결제 확정 시 세션에 배정된 제휴업체를 조회해 안내 이미지/문구에 반영한다.
+  // 결제 확정 시 세션에 배정된 제휴업체를 조회해 안내 이미지/문구 + QR(galleryToken)에 반영한다.
   useEffect(() => {
+    let isMounted = true;
+    let retryTimer: ReturnType<typeof setTimeout>;
     const controller = new AbortController();
-    getAssignedPartner(sessionId, controller.signal)
-      .then((partner) => setAssignedPartnerName(partner.name))
-      .catch(() => {});
-    return () => controller.abort();
-  }, [sessionId]);
+
+    function fetchPartner(attempt: number) {
+      getAssignedPartner(sessionId, controller.signal)
+        .then((partner) => {
+          if (isMounted) {
+            setAssignedPartner(partner);
+            setPartnerFetchFailed(false);
+          }
+        })
+        .catch((err) => {
+          if (isApiError(err) && err.code === "CANCELED") return;
+
+          if (
+            isMounted &&
+            isApiError(err) &&
+            err.code === "SESSION_404_2" &&
+            attempt < PARTNER_FETCH_MAX_RETRIES
+          ) {
+            retryTimer = setTimeout(
+              () => fetchPartner(attempt + 1),
+              PARTNER_FETCH_RETRY_DELAY_MS,
+            );
+            return;
+          }
+
+          console.error("배정된 제휴업체 조회 실패:", err);
+          if (isMounted) setPartnerFetchFailed(true);
+        });
+    }
+
+    fetchPartner(0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(retryTimer);
+      controller.abort();
+    };
+  }, [sessionId, retryCount]);
 
   useEffect(() => {
     if (progress >= 100) return;
@@ -140,7 +188,10 @@ export function LoadingStep({
   }, []);
 
   // 화면 밖 PhotoFrame을 캡처해 최종 이미지로 업로드한다(정확히 한 번).
+  // 프레임에 박히는 QR이 galleryToken 기반이라, 업체 배정(qrCodeUrl 확보)이 끝나기 전에는
+  // 시작하지 않는다 — 그렇지 않으면 QR이 비어있는 프레임이 그대로 인쇄/업로드된다.
   useEffect(() => {
+    if (!qrCodeUrl) return;
     if (uploadStartedRef.current) return;
     uploadStartedRef.current = true;
 
@@ -175,11 +226,12 @@ export function LoadingStep({
     }
 
     captureAndUpload();
-  }, [sessionId, retryCount]);
+  }, [sessionId, retryCount, qrCodeUrl]);
 
   const handleRetryUpload = () => {
     uploadStartedRef.current = false;
     setUploadError(null);
+    setPartnerFetchFailed(false);
     setRetryCount((count) => count + 1);
   };
 
@@ -246,9 +298,11 @@ export function LoadingStep({
           <p className="text-ipad-body-1-light text-gray-600">
             {uploadError
               ? uploadError
-              : "인화한 사진을 가지고 화면 속 매장에 방문하면 혜택을 받을 수 있어요."}
+              : partnerFetchFailed
+                ? "제휴업체 배정 정보를 불러오지 못했습니다."
+                : "인화한 사진을 가지고 화면 속 매장에 방문하면 혜택을 받을 수 있어요."}
           </p>
-          {uploadError && (
+          {(uploadError || partnerFetchFailed) && (
             <div className="flex items-center gap-3 pt-2">
               <Button
                 variant="primary"
@@ -310,12 +364,14 @@ export function LoadingStep({
               <div className="size-6.5 bg-ipad-background" />
 
               <div className="size-47.5 bg-ipad-background flex justify-center items-center">
-                <QrCode
-                  url={qrCodeUrl}
-                  size={150}
-                  dotsColor="#0a2e1f"
-                  backgroundColor="#ffffff"
-                />
+                {qrCodeUrl && (
+                  <QrCode
+                    url={qrCodeUrl}
+                    size={150}
+                    dotsColor="#0a2e1f"
+                    backgroundColor="#ffffff"
+                  />
+                )}
               </div>
             </div>
           </div>
