@@ -7,11 +7,12 @@ const Header = () => {
   const isMobileRoute = location.pathname.startsWith("/intro");
   const isDownloadRoute = location.pathname.endsWith("/download");
   const isLocationRoute = location.pathname.split("/").includes("location");
+  const isRefundPolicyRoute = location.pathname === "/refund-policy";
   const { sessionId } = useParams({ strict: false });
 
-  // 사진 저장하기/위치 보기 페이지는 자체 상단바(뒤로가기+타이틀)를 갖고 있으므로
+  // 사진 저장하기/위치 보기/환불 정책 페이지는 자체 상단바(뒤로가기+타이틀)를 갖고 있으므로
   // 전역 Header(로고+갤러리 버튼)를 노출하지 않는다.
-  if (isDownloadRoute || isLocationRoute) return null;
+  if (isDownloadRoute || isLocationRoute || isRefundPolicyRoute) return null;
 
   // sessionId가 있는 `/intro/{sessionId}`(QR 진입)에서만 사진 아이콘 버튼을 노출한다.
   const showGalleryButton = Boolean(sessionId);
