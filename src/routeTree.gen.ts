@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FailRouteImport } from './routes/fail'
 import { Route as IntroRouteImport } from './routes/intro'
+import { Route as PhotoFilterTestRouteImport } from './routes/photo-filter-test'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as TestRouteImport } from './routes/test'
@@ -35,6 +36,11 @@ const FailRoute = FailRouteImport.update({
 const IntroRoute = IntroRouteImport.update({
   id: '/intro',
   path: '/intro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotoFilterTestRoute = PhotoFilterTestRouteImport.update({
+  id: '/photo-filter-test',
+  path: '/photo-filter-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
+  '/photo-filter-test': typeof PhotoFilterTestRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
+  '/photo-filter-test': typeof PhotoFilterTestRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
+  '/photo-filter-test': typeof PhotoFilterTestRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
   '/test': typeof TestRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fail'
     | '/intro'
+    | '/photo-filter-test'
     | '/refund-policy'
     | '/success'
     | '/test'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/fail'
+    | '/photo-filter-test'
     | '/refund-policy'
     | '/success'
     | '/test'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fail'
     | '/intro'
+    | '/photo-filter-test'
     | '/refund-policy'
     | '/success'
     | '/test'
@@ -173,6 +185,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FailRoute: typeof FailRoute
   IntroRoute: typeof IntroRouteWithChildren
+  PhotoFilterTestRoute: typeof PhotoFilterTestRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   SuccessRoute: typeof SuccessRoute
   TestRoute: typeof TestRoute
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/intro'
       fullPath: '/intro'
       preLoaderRoute: typeof IntroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photo-filter-test': {
+      id: '/photo-filter-test'
+      path: '/photo-filter-test'
+      fullPath: '/photo-filter-test'
+      preLoaderRoute: typeof PhotoFilterTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refund-policy': {
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FailRoute: FailRoute,
   IntroRoute: IntroRouteWithChildren,
+  PhotoFilterTestRoute: PhotoFilterTestRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   SuccessRoute: SuccessRoute,
   TestRoute: TestRoute,
