@@ -2,6 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MissionCard } from "../../../shared/ui/Card/MissionCard";
 import { uploadPhoto } from "../api/photoApi";
 import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
+import {
+  applyColorCorrectionToImageData,
+  colorCorrectionCssFilter,
+  DEFAULT_COLOR_CORRECTION,
+} from "../../frame/lib/colorCorrection";
 
 export interface CapturedPhoto {
   photoId: number | null;
@@ -300,6 +305,14 @@ export function PhotoStep({
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // 저장/업로드되는 실제 촬영 사진에 기본 색상보정(노출/그림자/대비)을
+        // 픽셀 단위로 반영한다. 라이브 프리뷰의 CSS filter 근사치와 달리
+        // 여기가 최종적으로 서버에 올라가는 이미지의 진짜 보정 단계다.
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        applyColorCorrectionToImageData(imageData, DEFAULT_COLOR_CORRECTION);
+        ctx.putImageData(imageData, 0, 0);
+
         dataUrl = canvas.toDataURL("image/png");
       }
     }
@@ -450,6 +463,10 @@ export function PhotoStep({
               playsInline
               muted
               className="w-full h-full object-cover -scale-x-100"
+              // 실제 촬영 캡처에 적용되는 색상보정을 라이브 프리뷰에도 실시간으로 보여준다.
+              // 매 프레임 픽셀 연산을 하기엔 비용이 커서 CSS filter 근사치를 쓰고,
+              // 실제 저장되는 사진은 capturePhoto()에서 픽셀 단위로 정확히 보정한다.
+              style={{ filter: colorCorrectionCssFilter(DEFAULT_COLOR_CORRECTION) }}
             />
 
             {/* 카메라 에러 또는 시뮬레이션 알림 */}
