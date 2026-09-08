@@ -3,10 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "../../../shared/ui/Button/Button";
 import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
-import { getPrintInfo } from "../../frame/api/printApi";
+import { getPrintInfoByGalleryToken } from "../../frame/api/printApi";
 
 export interface FrameDownloadPageProps {
-  sessionId: string;
+  galleryToken: string;
 }
 
 type LoadState =
@@ -28,7 +28,7 @@ const PRINT_INFO_MAX_RETRIES = 5;
  * QR로 진입해 사진 아이콘 버튼을 눌렀을 때 보이는, 완성된 프레임 이미지를 다운로드하는 화면.
  * `GET /print`가 내려주는 `finalImageUrl` 한 장을 그대로 보여준다(프레임을 다시 조립하지 않는다).
  */
-export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
+export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -40,7 +40,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
     function fetchPrintInfo(attempt: number) {
       if (attempt === 0) setState({ status: "loading" });
 
-      getPrintInfo(sessionId, controller.signal)
+      getPrintInfoByGalleryToken(galleryToken, controller.signal)
         .then((info) => {
           if (isMounted)
             setState({
@@ -65,10 +65,14 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
             return;
           }
 
+          // 촬영 후 24시간이 지나 사진 열람 기한이 만료된 경우(410 PHOTO_VIEW_EXPIRED)를
+          // 그 외 실패와 구분해서 보여준다.
           const message =
-            isApiError(err) && err.code === "PRINT400_5"
-              ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
-              : "사진을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+            isApiError(err) && err.code === "PHOTO_VIEW_EXPIRED"
+              ? "사진 열람 기한(촬영 후 24시간)이 지나 더 이상 볼 수 없어요."
+              : isApiError(err) && err.code === "PRINT400_5"
+                ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
+                : "사진을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
           if (isMounted) setState({ status: "error", message });
         });
     }
@@ -80,7 +84,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
       clearTimeout(retryTimer);
       controller.abort();
     };
-  }, [sessionId]);
+  }, [galleryToken]);
 
   const handleDownload = async () => {
     if (state.status !== "ready") return;
@@ -96,7 +100,7 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = `itsai-${sessionId}.png`;
+      anchor.download = `itsai-${galleryToken}.png`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -116,8 +120,8 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
         {/* 상단: 뒤로가기 + 타이틀 */}
         <div className="w-full flex items-center justify-center relative py-3 border-b border-gray-100">
           <Link
-            to="/intro/$sessionId"
-            params={{ sessionId }}
+            to="/intro/$galleryToken"
+            params={{ galleryToken }}
             className="absolute left-0"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-500" />
