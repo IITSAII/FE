@@ -207,7 +207,13 @@ export function LoadingStep({
         className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none"
         aria-hidden
       >
-        <div ref={captureNodeRef}>
+        {/* html-to-image(toBlob)는 캡처 대상 노드의 크기를 scrollWidth가 아니라
+            clientWidth/clientHeight로 측정한다. 이 노드는 위 부모(w-0 h-0)의
+            containing block 안에서 width:auto인 일반 block이라 clientWidth가
+            0으로 계산되어 캔버스가 0×0으로 생성되고(toBlob이 null 반환) 캡처가
+            항상 실패했다. w-fit h-fit으로 실제 자식(PhotoFrame/JobokFrame)
+            크기에 맞춰 스스로 크기를 갖도록 해 이 문제를 막는다. */}
+        <div ref={captureNodeRef} className="w-fit h-fit">
           {design === "jobok" ? (
             <JobokFrame
               variant={variant}
