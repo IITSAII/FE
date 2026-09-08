@@ -20,6 +20,10 @@ function formatCapturedAt(isoDate: string): string {
   return `${year}. ${month}. ${day}`;
 }
 
+/** 프레임 확정 직후엔 최종 이미지 업로드가 아직 끝나지 않아 400(PRINT400_5)이 날 수 있어 재시도한다. */
+const PRINT_INFO_RETRY_DELAY_MS = 2000;
+const PRINT_INFO_MAX_RETRIES = 5;
+
 /**
  * QR로 진입해 사진 아이콘 버튼을 눌렀을 때 보이는, 완성된 프레임 이미지를 다운로드하는 화면.
  * `GET /print`가 내려주는 `finalImageUrl` 한 장을 그대로 보여준다(프레임을 다시 조립하지 않는다).
@@ -30,32 +34,50 @@ export function FrameDownloadPage({ sessionId }: FrameDownloadPageProps) {
 
   useEffect(() => {
     let isMounted = true;
+    let retryTimer: ReturnType<typeof setTimeout>;
     const controller = new AbortController();
 
-    async function fetchPrintInfo() {
-      setState({ status: "loading" });
-      try {
-        const info = await getPrintInfo(sessionId, controller.signal);
-        if (isMounted)
-          setState({
-            status: "ready",
-            finalImageUrl: info.finalImageUrl,
-            capturedAt: info.capturedAt,
-          });
-      } catch (err) {
-        if (isApiError(err) && err.code === "CANCELED") return;
-        const message =
-          isApiError(err) && err.code === "FINAL_IMAGE_NOT_READY"
-            ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
-            : "사진을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
-        if (isMounted) setState({ status: "error", message });
-      }
+    function fetchPrintInfo(attempt: number) {
+      if (attempt === 0) setState({ status: "loading" });
+
+      getPrintInfo(sessionId, controller.signal)
+        .then((info) => {
+          if (isMounted)
+            setState({
+              status: "ready",
+              finalImageUrl: info.finalImageUrl,
+              capturedAt: info.capturedAt,
+            });
+        })
+        .catch((err) => {
+          if (isApiError(err) && err.code === "CANCELED") return;
+
+          if (
+            isMounted &&
+            isApiError(err) &&
+            err.code === "PRINT400_5" &&
+            attempt < PRINT_INFO_MAX_RETRIES
+          ) {
+            retryTimer = setTimeout(
+              () => fetchPrintInfo(attempt + 1),
+              PRINT_INFO_RETRY_DELAY_MS,
+            );
+            return;
+          }
+
+          const message =
+            isApiError(err) && err.code === "PRINT400_5"
+              ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
+              : "사진을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+          if (isMounted) setState({ status: "error", message });
+        });
     }
 
-    fetchPrintInfo();
+    fetchPrintInfo(0);
 
     return () => {
       isMounted = false;
+      clearTimeout(retryTimer);
       controller.abort();
     };
   }, [sessionId]);
