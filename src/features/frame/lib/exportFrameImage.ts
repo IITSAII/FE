@@ -105,19 +105,35 @@ function computeCoverRect(
   };
 }
 
+/** DOM 요소의 노드 기준 상대 좌표(캡처 캔버스 픽셀 단위)를 계산한다. */
+function getRelativeRect(
+  el: Element,
+  nodeRect: DOMRect,
+  scaleX: number,
+  scaleY: number,
+): { x: number; y: number; width: number; height: number } {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: (rect.left - nodeRect.left) * scaleX,
+    y: (rect.top - nodeRect.top) * scaleY,
+    width: rect.width * scaleX,
+    height: rect.height * scaleY,
+  };
+}
+
 /**
- * `html-to-image`가 캡처한 캔버스 위에, DOM의 사진 `<img>` 요소들을 직접 `drawImage`로
- * 다시 그려 넣는다(patch).
+ * `html-to-image`가 캡처한 캔버스 위에, DOM의 사진 `<img>`와 QR `<canvas>` 요소들을
+ * 직접 `drawImage`로 다시 그려 넣는다(patch).
  *
  * `html-to-image`는 DOM을 SVG로 직렬화해 `foreignObject`로 캔버스에 래스터화하는데,
- * 실기기(iOS Safari)에서 이 직렬화 과정이 `<img>` 요소(특히 `data:` URL +
- * `object-fit: cover` 조합)를 누락시키는 사례가 확인됐다(#74) — 사진이 `complete: true`,
- * 올바른 `naturalWidth/Height`로 완전히 로드돼 있어도 최종 캡처 결과물에는 비어있었다.
- * 반면 프레임 배경/텍스트/QR/SVG 장식 요소는 정상적으로 캡처됨이 확인되어, 사진만 이렇게
- * 네이티브 `drawImage`로 직접 patch한다 — `foreignObject` 직렬화를 거치지 않으므로
- * 이 WebKit 특화 버그를 우회한다.
+ * 실기기(iOS Safari)에서 이 직렬화 과정이 `<img>`/`<canvas>` 요소(특히 `data:` URL +
+ * `object-fit: cover` 조합)를 누락시키는 사례가 확인됐다(#74, #77) — 두 요소 모두
+ * DOM상으론 완전히 로드/페인트된 상태였는데도 최종 캡처 결과물에는 비어있었다.
+ * 반면 프레임 배경/텍스트/SVG 장식 요소는 정상적으로 캡처됨이 확인되어, 사진과 QR만
+ * 이렇게 네이티브 `drawImage`로 직접 patch한다 — `foreignObject` 직렬화를 거치지
+ * 않으므로 이 WebKit 특화 버그를 우회한다.
  */
-function patchPhotosOntoCanvas(
+function patchRasterElementsOntoCanvas(
   node: HTMLElement,
   canvas: HTMLCanvasElement,
 ): void {
@@ -137,23 +153,19 @@ function patchPhotosOntoCanvas(
       continue;
     }
 
-    const imgRect = img.getBoundingClientRect();
-    const containerX = (imgRect.left - nodeRect.left) * scaleX;
-    const containerY = (imgRect.top - nodeRect.top) * scaleY;
-    const containerWidth = imgRect.width * scaleX;
-    const containerHeight = imgRect.height * scaleY;
-    if (containerWidth === 0 || containerHeight === 0) continue;
+    const container = getRelativeRect(img, nodeRect, scaleX, scaleY);
+    if (container.width === 0 || container.height === 0) continue;
 
     const cover = computeCoverRect(
-      containerWidth,
-      containerHeight,
+      container.width,
+      container.height,
       img.naturalWidth,
       img.naturalHeight,
     );
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(containerX, containerY, containerWidth, containerHeight);
+    ctx.rect(container.x, container.y, container.width, container.height);
     ctx.clip();
 
     // 사진에 grayscale 등 CSS filter 클래스가 적용돼 있으면 canvas에도 동일하게 반영한다.
@@ -164,13 +176,35 @@ function patchPhotosOntoCanvas(
 
     ctx.drawImage(
       img,
-      containerX + cover.x,
-      containerY + cover.y,
+      container.x + cover.x,
+      container.y + cover.y,
       cover.width,
       cover.height,
     );
 
     ctx.restore();
+  }
+
+  // QR(qr-code-styling)은 useEffect에서 컨테이너에 직접 <canvas>를 append하는 방식이라
+  // 위 <img> patch 대상이 아니다. QR은 항상 컨테이너를 꽉 채우는 정사각형이라
+  // object-fit: cover 같은 크롭 계산 없이 컨테이너 크기에 그대로 맞춰 그린다.
+  const sourceCanvases = Array.from(node.querySelectorAll("canvas")).filter(
+    (sourceCanvas) => sourceCanvas !== canvas,
+  );
+
+  for (const sourceCanvas of sourceCanvases) {
+    if (sourceCanvas.width === 0 || sourceCanvas.height === 0) continue;
+
+    const container = getRelativeRect(sourceCanvas, nodeRect, scaleX, scaleY);
+    if (container.width === 0 || container.height === 0) continue;
+
+    ctx.drawImage(
+      sourceCanvas,
+      container.x,
+      container.y,
+      container.width,
+      container.height,
+    );
   }
 }
 
@@ -189,9 +223,17 @@ function logCaptureDiagnostics(
     naturalWidth: img.naturalWidth,
     naturalHeight: img.naturalHeight,
   }));
+  const canvases = Array.from(node.querySelectorAll("canvas")).map(
+    (canvas) => ({
+      width: canvas.width,
+      height: canvas.height,
+      painted: isCanvasPainted(canvas),
+    }),
+  );
 
   console.log(`[CAPTURE-DEBUG] attempt=${attempt}`, {
     images,
+    canvases,
     blobSize: blob?.size ?? null,
   });
 }
@@ -210,7 +252,7 @@ export async function exportFrameImage(node: HTMLElement): Promise<Blob> {
       cacheBust: true,
     });
 
-    patchPhotosOntoCanvas(node, canvas);
+    patchRasterElementsOntoCanvas(node, canvas);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/png"),
