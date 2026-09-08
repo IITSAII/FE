@@ -102,11 +102,14 @@ export function PhotoFrame({
                 isDark ? "bg-iphone-background" : "bg-frame-dark",
               )}
             >
+              {/* photos는 촬영 시 캔버스에서 만든 data: URL이라 항상 same-origin이다.
+                  crossOrigin="anonymous"를 붙이면 필요도 없을뿐더러, 일부 iOS Safari에서
+                  data: URL 이미지에 이 속성이 붙었을 때 로드 자체가 실패하는 사례가 있어
+                  (최종 캡처 시 사진이 빈 채로 캡처되는 원인으로 의심됨) 의도적으로 뺐다. */}
               {photoUrl && (
                 <img
                   src={photoUrl}
                   alt={`Photo ${idx + 1}`}
-                  crossOrigin="anonymous"
                   className={cn(
                     "w-full h-full object-cover",
                     filter === "grayscale" && "grayscale",
