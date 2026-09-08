@@ -163,7 +163,13 @@ export function LoadingStep({
         setIsUploadDone(true);
         setUploadError(null);
       } catch (err) {
-        console.error("최종 이미지 업로드 실패:", err);
+        // 캡처(exportFrameImage) 단계에서 실패하면 업로드 요청 자체가 나가지 않으므로,
+        // 실패 지점(캡처 vs 업로드)과 원인을 구분할 수 있도록 에러 정보를 자세히 남긴다.
+        console.error("최종 이미지 업로드 실패:", {
+          error: err,
+          message: err instanceof Error ? err.message : String(err),
+          sessionId,
+        });
         setUploadError("사진 인화 준비 중 오류가 발생했습니다.");
       }
     }
