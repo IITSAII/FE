@@ -5,16 +5,16 @@ import type { AssignedPartner } from "../api/partnerApi";
 import { getNaverMapSearchUrl, getPartnerLocationVariant } from "../lib/partnerMatch";
 
 export interface PartnerToastProps {
-  sessionId: string;
+  galleryToken: string;
   partner: AssignedPartner;
 }
 
 /**
- * `/intro/{sessionId}` 화면 하단에 떠 있는, 배정된 제휴업체 안내 토스트.
- * CategoryTabs에서 어떤 업체로 바꾸든 항상 sessionId에 배정된 업체의 혜택 문구를 보여준다.
+ * `/intro/{galleryToken}` 화면 하단에 떠 있는, 배정된 제휴업체 안내 토스트.
+ * CategoryTabs에서 어떤 업체로 바꾸든 항상 galleryToken에 배정된 업체의 혜택 문구를 보여준다.
  * 피치못한/반짝은 위치 보기 페이지로, 그 외(overnook, 마주하다 등)는 네이버 지도 검색으로 바로 이동한다.
  */
-export function PartnerToast({ sessionId, partner }: PartnerToastProps) {
+export function PartnerToast({ galleryToken, partner }: PartnerToastProps) {
   const variant = getPartnerLocationVariant(partner.name);
   const companyInfo = getCompanyLocationInfoByPartnerName(partner.name);
   const card = (
@@ -43,8 +43,8 @@ export function PartnerToast({ sessionId, partner }: PartnerToastProps) {
 
   return (
     <Link
-      to="/intro/$sessionId/location"
-      params={{ sessionId }}
+      to="/intro/$galleryToken/location"
+      params={{ galleryToken }}
       className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
     >
       {card}

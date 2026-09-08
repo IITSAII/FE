@@ -59,7 +59,12 @@ export async function uploadFinalImage(
   return data;
 }
 
-/** 세션의 인쇄 상태(최종 이미지, 프레임/필터, 인쇄 진행 상태)를 조회한다. */
+/**
+ * 세션의 인쇄 상태(최종 이미지, 프레임/필터, 인쇄 진행 상태)를 조회한다.
+ * 촬영 후 24시간이 지나면 410(`PHOTO_VIEW_EXPIRED`)이 날 수 있다.
+ * @deprecated 프론트에서는 더 이상 이 sessionId 기반 조회를 사용하지 않는다
+ * (QR 진입 화면은 {@link getPrintInfoByGalleryToken}을 사용). 백엔드 정리 여부는 별도 확인 필요.
+ */
 export async function getPrintInfo(
   sessionId: string,
   signal?: AbortSignal,
@@ -67,5 +72,21 @@ export async function getPrintInfo(
   const { data } = await api.get<PrintInfo>(`/sessions/${sessionId}/print`, {
     signal,
   });
+  return data;
+}
+
+/**
+ * galleryToken으로 세션의 인쇄 상태(최종 이미지 등)를 조회한다.
+ * sessionId 기반 조회와 동일하게 촬영 후 24시간이 지나면 410(`PHOTO_VIEW_EXPIRED`)이 날 수 있다.
+ * QR로 진입하는 `/intro/{galleryToken}/download` 화면에서 사용한다.
+ */
+export async function getPrintInfoByGalleryToken(
+  galleryToken: string,
+  signal?: AbortSignal,
+): Promise<PrintInfo> {
+  const { data } = await api.get<PrintInfo>(
+    `/gallery/${galleryToken}/print`,
+    { signal },
+  );
   return data;
 }
