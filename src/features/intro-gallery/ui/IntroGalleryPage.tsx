@@ -23,7 +23,7 @@ const CATEGORIES: CategoryTabItem[] = [
   { id: "pichimothan", name: "피치못한" },
 ];
 
-/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(PARTNER_NOT_ASSIGNED)가 날 수 있어 재시도한다. */
+/** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(SESSION_404_2)가 날 수 있어 재시도한다. */
 const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
 const PARTNER_FETCH_MAX_RETRIES = 5;
 
@@ -62,7 +62,7 @@ export function IntroGalleryPage({ sessionId }: IntroGalleryPageProps) {
           if (
             isMounted &&
             isApiError(err) &&
-            err.code === "PARTNER_NOT_ASSIGNED" &&
+            err.code === "SESSION_404_2" &&
             attempt < PARTNER_FETCH_MAX_RETRIES
           ) {
             retryTimer = setTimeout(
