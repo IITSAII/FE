@@ -10,7 +10,6 @@ import { QrCode } from "../../../shared/ui/QrCode/QrCode";
 import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
-import { applyColorCorrectionToPhotos } from "../../frame/lib/colorCorrection";
 import { uploadFinalImage } from "../../frame/api/printApi";
 import type { FrameDesign } from "../../frame/ui/FrameStep";
 import {
@@ -96,9 +95,6 @@ export function LoadingStep({
   onBack,
 }: LoadingStepProps) {
   const [progress, setProgress] = useState(0);
-  const [correctedPhotos, setCorrectedPhotos] = useState<
-    (string | undefined | null)[]
-  >(photos);
   const [isUploadDone, setIsUploadDone] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -201,16 +197,12 @@ export function LoadingStep({
 
     async function captureAndUpload() {
       try {
-        // 촬영 사진에 색상보정(노출/그림자/대비)을 픽셀 단위로 적용해 캡처용 사진을 준비한다.
-        // 원본 사진 자체를 바꾸는 게 아니라 캡처 노드에만 반영되는 보정본을 별도로 만든다.
-        const corrected = await applyColorCorrectionToPhotos(photos);
-        setCorrectedPhotos(corrected);
-
+        // 촬영 사진 자체(PhotoStep의 capturePhoto)에 이미 색상보정이 픽셀 단위로
+        // 반영돼 있으므로, 여기서는 다시 보정하지 않고 그대로 캡처한다
+        // (중복 적용하면 노출/대비가 두 번 겹쳐 과다 보정된다).
         // 폰트 로딩 완료 + 2번의 rAF(레이아웃·페인트 반영)를 기다린 뒤 캡처한다.
         // 고정된 100ms 대기로는 기기/네트워크가 느릴 때(iPad 등) 캡처 시점에 QR 캔버스나
         // 이미지가 아직 페인트되지 않아 프레임만 캡처되는 경우가 있어 조건 기반 대기로 교체.
-        // 색상보정본으로 <img src>가 갱신되는 리렌더까지 함께 기다려야 하므로 rAF 대기는
-        // setCorrectedPhotos 이후에 수행한다.
         if (document.fonts?.ready) {
           await document.fonts.ready;
         }
@@ -237,9 +229,6 @@ export function LoadingStep({
     }
 
     captureAndUpload();
-    // photos는 세션당 한 번 촬영이 끝나면 이후 값이 바뀌지 않는 배열이고, uploadStartedRef로
-    // 이펙트가 정확히 한 번만 실행되도록 이미 가드하고 있어 deps에서 의도적으로 제외한다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, retryCount, qrCodeUrl]);
 
   const handleRetryUpload = () => {
@@ -283,7 +272,7 @@ export function LoadingStep({
           {design === "jobok" ? (
             <JobokFrame
               variant={variant}
-              photos={correctedPhotos}
+              photos={photos}
               date={date}
               qrCodeUrl={qrCodeUrl}
               filter={filter}
@@ -292,7 +281,7 @@ export function LoadingStep({
             <PhotoFrame
               variant={variant}
               theme={theme}
-              photos={correctedPhotos}
+              photos={photos}
               relationship={relationshipTitle || "Friend"}
               date={date}
               qrCodeUrl={qrCodeUrl}

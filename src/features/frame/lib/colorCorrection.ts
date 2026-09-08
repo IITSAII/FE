@@ -43,38 +43,16 @@ function clamp255(value: number): number {
 }
 
 /**
- * 이미지 URL을 불러와 노출/그림자/대비를 픽셀 단위로 적용한 뒤, 결과를 data URL로 반환한다.
+ * 이미 캔버스에 그려진 `ImageData`에 노출/그림자/대비를 픽셀 단위로 in-place 적용한다.
  * - 그림자는 픽셀별 휘도를 기준으로 어두운 영역에만 가중 적용되는 실제 픽셀 보정이다
  *   (CSS filter 근사치와 달리 밝은 영역은 거의 그대로 유지된다).
- * - 원본이 별도 오리진(S3 등)에서 서빙되는 경우 CORS(Access-Control-Allow-Origin)가
- *   허용돼 있어야 한다 — 이미 PhotoFrame/JobokFrame의 <img crossOrigin="anonymous">가
- *   동작하는 환경이라면(html-to-image 캡처가 이미 이 조건에 의존) 문제없이 동작한다.
+ * - 이미지를 새로 불러오지 않고 호출 측이 이미 가진 캔버스 컨텍스트를 그대로 활용하므로,
+ *   촬영 캡처처럼 동기적으로(추가 네트워크/디코딩 대기 없이) 바로 적용해야 하는 경우에 쓴다.
  */
-export async function applyColorCorrection(
-  imageUrl: string,
+export function applyColorCorrectionToImageData(
+  imageData: ImageData,
   { exposure, shadow, contrast }: ColorCorrectionOptions,
-): Promise<string> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () =>
-      reject(new Error(`색상보정용 이미지 로드 실패: ${imageUrl}`));
-    img.src = imageUrl;
-  });
-
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("색상보정용 2D 캔버스 컨텍스트를 생성하지 못했습니다.");
-  }
-
-  ctx.drawImage(image, 0, 0);
-
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+): void {
   const { data } = imageData;
 
   // 노출(-100~100) → 픽셀 오프셋(-255~255), 대비(-100~100) → 표준 대비 계수.
@@ -104,18 +82,58 @@ export async function applyColorCorrection(
     );
     // 알파(data[i + 3])는 그대로 둔다.
   }
+}
 
+/**
+ * 이미지 URL을 불러와 색상보정을 픽셀 단위로 적용한 뒤, 결과를 data URL로 반환한다.
+ * - 원본이 별도 오리진(S3 등)에서 서빙되는 경우 CORS(Access-Control-Allow-Origin)가
+ *   허용돼 있어야 한다.
+ * - 개발용 비교 도구(photo-filter-test)처럼 "이미지 URL만 갖고 있고 캔버스는 아직 없는"
+ *   상황을 위한 진입점이다. 이미 캔버스가 있는 경우(촬영 캡처 등)는
+ *   `applyColorCorrectionToImageData`를 직접 쓰는 편이 이미지 로드 왕복이 없어 더 빠르다.
+ */
+export async function applyColorCorrection(
+  imageUrl: string,
+  options: ColorCorrectionOptions,
+): Promise<string> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () =>
+      reject(new Error(`색상보정용 이미지 로드 실패: ${imageUrl}`));
+    img.src = imageUrl;
+  });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("색상보정용 2D 캔버스 컨텍스트를 생성하지 못했습니다.");
+  }
+
+  ctx.drawImage(image, 0, 0);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  applyColorCorrectionToImageData(imageData, options);
   ctx.putImageData(imageData, 0, 0);
 
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-/** photos 배열 전체에 동일한 색상보정을 적용한다. null/undefined는 그대로 통과시킨다. */
-export async function applyColorCorrectionToPhotos(
-  photos: (string | undefined | null)[],
-  options: ColorCorrectionOptions = DEFAULT_COLOR_CORRECTION,
-): Promise<(string | undefined | null)[]> {
-  return Promise.all(
-    photos.map((url) => (url ? applyColorCorrection(url, options) : url)),
-  );
+/**
+ * 노출/그림자/대비를 CSS `filter`로 근사한 문자열을 만든다.
+ * 픽셀 단위 보정(`applyColorCorrectionToImageData`)과 완전히 동일하지는 않지만
+ * (그림자는 전체 밝기에 완화된 비중으로만 반영됨), 촬영 중 라이브 비디오 미리보기처럼
+ * 매 프레임 픽셀 연산을 하기엔 비용이 큰 경우의 실시간 근사 미리보기용으로 쓴다.
+ */
+export function colorCorrectionCssFilter({
+  exposure,
+  shadow,
+  contrast,
+}: ColorCorrectionOptions): string {
+  const SHADOW_PREVIEW_WEIGHT = 0.3;
+  return `brightness(${100 + exposure + shadow * SHADOW_PREVIEW_WEIGHT}%) contrast(${100 + contrast}%)`;
 }
