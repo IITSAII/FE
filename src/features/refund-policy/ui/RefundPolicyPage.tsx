@@ -50,48 +50,52 @@ export function RefundPolicyPage() {
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
       <main className="w-full max-w-[430px] mx-auto flex flex-col box-border gap-6">
-        <div className="w-full flex items-center justify-center relative bg-iphone-background border-b border-gray-100 px-4.5 py-3">
+        <div className="w-full flex items-center justify-center relative bg-iphone-background border-b border-gray-100 py-3">
           <button
             type="button"
             onClick={() => router.history.back()}
             aria-label="이전 화면으로 이동"
-            className="absolute left-0"
+            className="absolute left-4.5"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-900" />
           </button>
-          <p className="text-iphone-heading-2-medium text-black">환불 정책</p>
+          <p className="text-iphone-heading-1-medium text-black tracking-[0.4px] leading-normal">
+            환불 정책
+          </p>
         </div>
 
-        <div className="w-full bg-white px-6 pt-5 pb-8 flex flex-col gap-6">
-          <div className="flex flex-col">
-            <h1 className="text-iphone-heading-1-semibold text-black">
-              환불 정책
-            </h1>
-            <p className="text-iphone-body-2-regular text-gray-400">
-              최종 업데이트 : {LAST_UPDATED}
-            </p>
-          </div>
+        <div className="w-full h-fit px-4.5">
+          <div className="w-full bg-white px-6 pt-5 pb-8 flex flex-col gap-6">
+            <div className="flex flex-col">
+              <h1 className="text-iphone-heading-2-semibold text-black tracking-[-0.45px] leading-normal">
+                환불 정책
+              </h1>
+              <p className="text-iphone-body-2-regular text-gray-400 leading-normal tracking-[-0.35px]">
+                최종 업데이트 : {LAST_UPDATED}
+              </p>
+            </div>
 
-          <div className="flex flex-col gap-4">
-            {REFUND_POLICY_SECTIONS.map((section, index) => (
-              <div key={index} className="flex flex-col gap-1">
-                <p className="flex gap-1 text-iphone-heading-2-medium text-gray-800">
-                  <span>{index + 1}.</span>
-                  <span>{section.title}</span>
-                </p>
-                <div className="flex flex-col text-iphone-body-2-regular text-gray-700">
-                  {section.body.map((line, lineIndex) => (
-                    <div key={lineIndex} className="flex gap-2 ps-0.5">
-                      <span
-                        className="mt-[9px] size-0.75 shrink-0 rounded-full bg-current"
-                        aria-hidden="true"
-                      />
-                      <span>{line}</span>
-                    </div>
-                  ))}
+            <div className="flex flex-col gap-4">
+              {REFUND_POLICY_SECTIONS.map((section, index) => (
+                <div key={index} className="flex flex-col gap-1">
+                  <p className="flex gap-1 text-iphone-heading-2-medium text-gray-800 leading-normal tracking-[-0.4px]">
+                    <span>{index + 1}.</span>
+                    <span>{section.title}</span>
+                  </p>
+                  <div className="flex flex-col gap-1 text-iphone-body-2-regular text-gray-700 leading-normal tracking-[-0.35px]">
+                    {section.body.map((line, lineIndex) => (
+                      <div key={lineIndex} className="flex gap-2 ps-0.5">
+                        <span
+                          className="mt-2.25 size-0.75 shrink-0 rounded-full bg-current"
+                          aria-hidden="true"
+                        />
+                        <span>{line}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </main>
