@@ -118,13 +118,13 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[430px] mx-auto px-4.5 pb-12 gap-[105.68px] flex flex-col box-border">
+      <main className="w-full max-w-[430px] mx-auto gap-6 flex flex-col box-border">
         {/* 상단: 뒤로가기 + 타이틀 */}
-        <div className="w-full flex items-center justify-center relative py-3 border-b border-gray-100">
+        <div className="w-full flex items-center justify-center relative bg-iphone-background border-b border-gray-100 py-3">
           <Link
             to="/intro/$galleryToken"
             params={{ galleryToken }}
-            className="absolute left-0"
+            className="absolute left-4.5"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-500" />
           </Link>
@@ -133,8 +133,8 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
           </h1>
         </div>
 
-        <div className="w-full flex flex-col gap-4">
-          <span className="text-iphone-body-1-regular text-black">
+        <div className="w-full flex flex-col gap-4 px-4.5">
+          <span className="text-iphone-body-1-regular text-black leading-normal tracking-[0.36px]">
             {state.status === "ready" ? formatCapturedAt(state.capturedAt) : ""}
           </span>
 
