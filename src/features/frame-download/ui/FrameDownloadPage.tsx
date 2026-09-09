@@ -100,7 +100,9 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
 
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = `itsai-${galleryToken}.png`;
+      // 파일명이 매번 같으면 같은 페이지에서 재다운로드 시 iOS Safari가 "이미 받은 파일"로
+      // 인식해 아무 피드백 없이 무시하는 경우가 있어, 다운로드마다 파일명을 다르게 만든다.
+      anchor.download = `itsai-${galleryToken}-${Date.now()}.png`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
