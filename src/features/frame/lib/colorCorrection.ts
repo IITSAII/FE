@@ -7,7 +7,7 @@ export interface ColorCorrectionOptions {
 
 /** 요청된 촬영 사진 기본 색상보정값. */
 export const DEFAULT_COLOR_CORRECTION: ColorCorrectionOptions = {
-  exposure: 30,
+  exposure: 15,
   shadow: -21,
   contrast: 12,
 };
