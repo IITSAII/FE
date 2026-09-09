@@ -16,13 +16,13 @@ export function CompanyLocationPage({ companyId }: CompanyLocationPageProps) {
 
   return (
     <div className="w-full min-h-screen bg-iphone-background font-primary flex flex-col items-center">
-      <main className="w-full max-w-[430px] mx-auto px-4.5 gap-6 flex flex-col box-border">
+      <main className="w-full max-w-[430px] mx-auto gap-6 flex flex-col box-border">
         {/* 헤더: 뒤로가기 + 타이틀 */}
-        <div className="w-full flex items-center justify-center relative py-3 border-b border-gray-100">
+        <div className="w-full flex items-center justify-center relative bg-iphone-background border-b border-gray-100 py-3">
           <Link
             to="/intro"
             aria-label="이전 화면으로 이동"
-            className="absolute left-0"
+            className="absolute left-4.5"
           >
             <LeftChevronIcon className="w-6 h-6 text-gray-900" />
           </Link>
@@ -31,7 +31,7 @@ export function CompanyLocationPage({ companyId }: CompanyLocationPageProps) {
           </p>
         </div>
 
-        <div className="w-full flex-1 flex items-center justify-center">
+        <div className="w-full flex-1 flex items-center justify-center px-4.5">
           {!info || info.variant === "naver-map" ? (
             <p className="text-iphone-body-1-light text-gray-500 text-center px-6 py-20">
               업체 정보를 찾을 수 없어요.
