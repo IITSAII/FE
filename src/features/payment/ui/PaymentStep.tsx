@@ -1,32 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  loadTossPayments,
-  ANONYMOUS,
-  type TossPaymentsWidgets,
-} from "@tosspayments/tosspayments-sdk";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { Button } from "../../../shared/ui/Button/Button";
 import { Card } from "../../../shared/ui/Card/Card";
-import { Modal } from "../../../shared/ui/Modal/Modal";
 import { useModal } from "../../../shared/hooks/useModal";
 import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { createSession, getSessionStatus } from "../api/paymentApi";
-
-/** 결제 실패 후 재진입 시 실패 모달을 자동으로 띄우기 위한 세션 플래그. */
-const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
-
-type PaymentWindow = Awaited<
-  ReturnType<TossPaymentsWidgets["renderPaymentWindow"]>
->;
+import { AuthCodeModal } from "./AuthCodeModal";
 
 export interface PaymentStepProps {
   totalPrice?: number;
   personnelCount?: number;
   onNext?: () => void;
   onBack?: () => void;
-  /** 타이머 만료 시 호출된다(결제창을 닫고 인트로 화면으로 복귀). */
+  /** 타이머 만료 시 호출된다(인증 모달을 닫고 인트로 화면으로 복귀). */
   onExpire?: () => void;
   /** 세션 생성 직후(sessionId 확보 시) 호출된다. */
   onSessionCreated?: (sessionId: string) => void;
@@ -35,43 +23,32 @@ export interface PaymentStepProps {
 export function PaymentStep({
   totalPrice = 3000,
   personnelCount = 2,
+  onNext,
   onBack,
   onExpire,
   onSessionCreated,
 }: PaymentStepProps) {
-  const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [serverAmount, setServerAmount] = useState<number | null>(null);
   const [stepExpiresAt, setStepExpiresAt] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
-  const paymentWindowRef = useRef<PaymentWindow | null>(null);
   const onSessionCreatedRef = useRef(onSessionCreated);
   onSessionCreatedRef.current = onSessionCreated;
 
   const {
-    isOpen: isFailureModalOpen,
-    openModal: openFailureModal,
-    closeModal: closeFailureModal,
+    isOpen: isAuthModalOpen,
+    openModal: openAuthModal,
+    closeModal: closeAuthModal,
   } = useModal();
 
-  // 결제 실패로 인해 /fail에서 되돌아온 경우, 결제 실패 모달을 자동으로 띄운다.
-  useEffect(() => {
-    if (sessionStorage.getItem(PAYMENT_FAILED_FLAG_KEY) === "1") {
-      sessionStorage.removeItem(PAYMENT_FAILED_FLAG_KEY);
-      openFailureModal();
-    }
-  }, [openFailureModal]);
-
-  const clientKey = import.meta.env.TOSS_CLIENT_KEY as string | undefined;
   const resolvedAmount = serverAmount ?? totalPrice;
 
   const handleExpire = () => {
     setIsExpired(true);
     setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
-    paymentWindowRef.current?.destroy().catch(() => {});
-    paymentWindowRef.current = null;
+    closeAuthModal();
     setTimeout(() => onExpire?.(), 1500);
   };
 
@@ -85,20 +62,10 @@ export function PaymentStep({
     let isMounted = true;
     const controller = new AbortController();
 
-    async function initTossWidget() {
+    async function initSession() {
       setErrorMessage(null);
-      setWidgets(null);
       setSessionId(null);
       setServerAmount(null);
-
-      if (!clientKey) {
-        if (!isMounted) return;
-        setErrorMessage(
-          "결제 환경변수가 설정되지 않았습니다. 관리자에게 문의해주세요.",
-        );
-        setIsLoading(false);
-        return;
-      }
 
       try {
         setIsLoading(true);
@@ -131,81 +98,42 @@ export function PaymentStep({
           }
         }
 
-        const tossPayments = await loadTossPayments(clientKey);
-        const widgetsInstance = tossPayments.widgets({
-          customerKey: ANONYMOUS,
-        });
-
-        await widgetsInstance.setAmount({
-          currency: "KRW",
-          value: nextAmount,
-        });
-
-        if (isMounted) {
-          setWidgets(widgetsInstance);
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       } catch (err) {
         // 언마운트로 인한 요청 취소는 사용자에게 노출하지 않는다.
         if (isApiError(err) && err.code === "CANCELED") return;
 
-        console.error("Failed to initialize Toss Payments widget:", err);
+        console.error("Failed to create payment session:", err);
         if (isMounted) {
           setErrorMessage(
             err instanceof Error
               ? err.message
-              : "결제 위젯을 불러오는 중 오류가 발생했습니다.",
+              : "결제 정보를 불러오는 중 오류가 발생했습니다.",
           );
           setIsLoading(false);
         }
       }
     }
 
-    initTossWidget();
+    initSession();
 
     return () => {
       isMounted = false;
       controller.abort();
     };
-  }, [clientKey, personnelCount, totalPrice]);
+  }, [personnelCount, totalPrice]);
 
-  const handlePayment = async () => {
-    if (!widgets || !sessionId || serverAmount == null || isExpired) return;
-
-    try {
-      const paymentWindow = await widgets.renderPaymentWindow({
-        variantKey: {
-          paymentMethod: "DEFAULT",
-          agreement: "AGREEMENT",
-        },
-      });
-
-      // 결제창이 열려있는 동안 타이머가 만료되면(handleExpire) 강제로 닫을 수 있도록 참조를 보관한다.
-      paymentWindowRef.current = paymentWindow;
-
-      paymentWindow.on("paymentRequest", async () => {
-        try {
-          await widgets.requestPayment({
-            orderId: sessionId,
-            orderName: `잇, 사이 사진 촬영 (${personnelCount}인)`,
-            successUrl: `${window.location.origin}/success`,
-            failUrl: `${window.location.origin}/fail`,
-          });
-        } catch (err) {
-          console.error("Payment request failed:", err);
-          await paymentWindow.destroy();
-          openFailureModal();
-        }
-      });
-    } catch (err) {
-      console.error("Failed to open payment window:", err);
-      openFailureModal();
-    }
+  const handlePayment = () => {
+    if (!sessionId || serverAmount == null || isExpired) return;
+    openAuthModal();
   };
 
-  const handleRetryPayment = () => {
-    closeFailureModal();
-    handlePayment();
+  // 인증 코드가 확인되면 결제 완료로 간주하고 다음 단계로 넘어간다.
+  const handleAuthVerified = () => {
+    if (!sessionId) return;
+    closeAuthModal();
+    sessionStorage.setItem("payment_confirmed_session_id", sessionId);
+    onNext?.();
   };
 
   return (
@@ -276,7 +204,7 @@ export function PaymentStep({
             <Button
               variant="dark"
               onClick={handlePayment}
-              disabled={isLoading || !widgets || !sessionId || isExpired}
+              disabled={isLoading || !sessionId || isExpired}
               className="w-full rounded-[8px] py-4 text-ipad-heading-2-medium text-green-200 max-w-106.75"
             >
               {isExpired
@@ -300,16 +228,10 @@ export function PaymentStep({
         </div>
       </main>
 
-      <Modal
-        isOpen={isFailureModalOpen}
-        onClose={closeFailureModal}
-        closeOnBackdropClick={false}
-        title="결제 승인에 실패하였습니다."
-        description={
-          "결제 승인이 계속 실패한다면,\n인스타그램 또는 고객센터로 문의해 주세요."
-        }
-        confirmText="결제 다시 시도하기"
-        onConfirm={handleRetryPayment}
+      <AuthCodeModal
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+        onVerified={handleAuthVerified}
       />
     </div>
   );

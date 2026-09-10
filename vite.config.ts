@@ -7,7 +7,7 @@ import svgr from "vite-plugin-svgr";
 
 // https://vite.dev/config/
 export default defineConfig({
-  envPrefix: ["VITE_", "TOSS_"],
+  envPrefix: ["VITE_"],
   plugins: [
     tanstackRouter({
       routesDirectory: "./src/routes", // 라우트 파일 위치
