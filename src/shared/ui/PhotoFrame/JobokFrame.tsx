@@ -23,10 +23,10 @@ export interface JobokFrameProps extends React.HTMLAttributes<HTMLDivElement> {
 // 뚫려 있어(cutout), 사진/QR을 프레임보다 아래에 깔고 프레임 이미지를 맨 위에 겹치면
 // 별도 마스킹 없이도 정확히 이 자리에 사진/QR이 그대로 노출된다.
 const PHOTO_SLOTS = [
-  { x: 2, y: 2, width: 492, height: 339 },
-  { x: 2, y: 351, width: 492, height: 339 },
-  { x: 2, y: 700, width: 492, height: 339 },
-  { x: 2, y: 1049, width: 492, height: 339 },
+  { x: 4, y: 4, width: 496, height: 343 },
+  { x: 4, y: 353, width: 496, height: 343 },
+  { x: 4, y: 702, width: 496, height: 343 },
+  { x: 4, y: 1051, width: 496, height: 343 },
 ];
 
 const QR_SLOT = { x: 515, y: 1317, size: 73 };
@@ -56,7 +56,10 @@ export function JobokFrame({
 
   return (
     <div
-      className={cn("relative w-150 h-450 select-none overflow-hidden", className)}
+      className={cn(
+        "relative w-150 h-450 select-none overflow-hidden",
+        className,
+      )}
       {...props}
     >
       {photoSlots.map((photoUrl, idx) => {
@@ -93,15 +96,19 @@ export function JobokFrame({
 
       <div
         className="absolute"
-        style={{ left: QR_SLOT.x, top: QR_SLOT.y, width: QR_SLOT.size, height: QR_SLOT.size }}
+        style={{
+          left: QR_SLOT.x,
+          top: QR_SLOT.y,
+          width: QR_SLOT.size,
+          height: QR_SLOT.size,
+        }}
       >
         {qrCodeUrl && (
           <QrCode
             url={qrCodeUrl}
-            size={QR_SLOT.size}
             dotsColor={qrDotsColor}
             backgroundColor={qrBackgroundColor}
-            className="size-full"
+            size={QR_SLOT.size}
           />
         )}
       </div>
@@ -120,7 +127,12 @@ export function JobokFrame({
 
       <div
         className="absolute flex items-baseline gap-3 font-primary font-semibold whitespace-nowrap"
-        style={{ left: DATE_SLOT.x, top: DATE_SLOT.y, color: textColor, fontSize: 18 }}
+        style={{
+          left: DATE_SLOT.x,
+          top: DATE_SLOT.y,
+          color: textColor,
+          fontSize: 18,
+        }}
       >
         <span>Date</span>
         <span>{date}</span>
