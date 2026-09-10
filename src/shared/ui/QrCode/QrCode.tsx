@@ -3,7 +3,7 @@ import QRCodeStyling from "qr-code-styling";
 import { cn } from "../../lib/utils";
 
 /** QR 패턴과 배경 테두리 사이 여백(px) */
-const QR_MARGIN = 4;
+const QR_MARGIN = 1;
 
 export interface QrCodeProps {
   /** QR 코드가 담을 URL */
