@@ -131,13 +131,13 @@ export function PhotoFrame({
             {/* 하단 QR 코드 박스 */}
             {qrCodeUrl ? (
               isDark ? (
-                <QrCode url={qrCodeUrl} className="size-18.25" />
+                <QrCode url={qrCodeUrl} size={73} />
               ) : (
                 <QrCode
                   url={qrCodeUrl}
                   backgroundColor="#F9F5ED"
                   dotsColor="#4ca858"
-                  className="size-18.25"
+                  size={73}
                 />
               )
             ) : (
