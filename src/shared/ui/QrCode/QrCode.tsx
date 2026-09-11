@@ -45,7 +45,7 @@ export function QrCode({
         height: size,
         data: url,
         margin: QR_MARGIN,
-        qrOptions: { errorCorrectionLevel: "M" },
+        qrOptions: { errorCorrectionLevel: "L" },
         dotsOptions: { color: dotsColor, type: "square", roundSize: false },
         backgroundOptions: { color: backgroundColor },
       });
