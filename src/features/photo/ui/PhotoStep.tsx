@@ -102,6 +102,28 @@ const MISSIONS_BY_RELATION: Record<
 // 관계가 선택되지 않았을 때(또는 알 수 없는 관계일 때) 사용할 기본 미션
 const DEFAULT_MISSION_SET = MISSIONS_BY_RELATION.close;
 
+// Fisher-Yates 셔플 (원본 배열은 그대로 두고 새 배열을 반환한다)
+function shuffle<T>(items: T[]): T[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// 관계별 포즈 목록에서 촬영 장수만큼 중복 없이 랜덤으로 뽑는다.
+// 포즈 수가 촬영 장수보다 적으면 다시 셔플해 이어 붙여 부족분을 채운다.
+function pickRandomPoses(poses: string[], count: number): string[] {
+  if (poses.length === 0) return [];
+
+  const picked: string[] = [];
+  while (picked.length < count) {
+    picked.push(...shuffle(poses).slice(0, count - picked.length));
+  }
+  return picked;
+}
+
 // 아이패드 등에서 기본으로 잡히는 초광각(Ultra Wide) 렌즈 명칭 패턴
 const ULTRA_WIDE_LABEL_PATTERN = /ultra ?wide|울트라|초광각/i;
 
@@ -207,6 +229,16 @@ export function PhotoStep({
   const [countdown, setCountdown] = useState(timerDurationSeconds);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // 선택한 관계에 해당하는 미션 세트 (관계 미선택/미확인 시 기본 세트)
+  const missionSet =
+    (selectedRelationId && MISSIONS_BY_RELATION[selectedRelationId]) ||
+    DEFAULT_MISSION_SET;
+  // 촬영 중 리렌더로 미션이 바뀌지 않도록 마운트 시 한 번만 랜덤으로 뽑아 고정한다.
+  // 관계는 이전 단계에서 확정된 뒤 전달되므로 PhotoStep이 떠 있는 동안 바뀌지 않는다.
+  const [missionPoses] = useState(() =>
+    pickRandomPoses(missionSet.poses, totalPhotosCount),
+  );
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -409,11 +441,9 @@ export function PhotoStep({
     }
   }, [capturedPhotos, totalPhotosCount, onNext]);
 
-  const missionSet =
-    (selectedRelationId && MISSIONS_BY_RELATION[selectedRelationId]) ||
-    DEFAULT_MISSION_SET;
+  // 마지막 촬영 직후 currentPhotoIndex가 totalPhotosCount까지 올라가므로 마지막 포즈로 고정한다.
   const currentMission = {
-    title: missionSet.poses[currentPhotoIndex % missionSet.poses.length],
+    title: missionPoses[Math.min(currentPhotoIndex, missionPoses.length - 1)],
     description: missionSet.description,
   };
 
