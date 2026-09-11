@@ -72,13 +72,25 @@ export function applyColorCorrectionToImageData(
     const shadowOffset = shadowMaxOffset * shadowWeight(luminance);
 
     data[i] = clamp255(
-      applyExposureAndContrast(r + shadowOffset, exposureOffset, contrastFactor),
+      applyExposureAndContrast(
+        r + shadowOffset,
+        exposureOffset,
+        contrastFactor,
+      ),
     );
     data[i + 1] = clamp255(
-      applyExposureAndContrast(g + shadowOffset, exposureOffset, contrastFactor),
+      applyExposureAndContrast(
+        g + shadowOffset,
+        exposureOffset,
+        contrastFactor,
+      ),
     );
     data[i + 2] = clamp255(
-      applyExposureAndContrast(b + shadowOffset, exposureOffset, contrastFactor),
+      applyExposureAndContrast(
+        b + shadowOffset,
+        exposureOffset,
+        contrastFactor,
+      ),
     );
     // 알파(data[i + 3])는 그대로 둔다.
   }
