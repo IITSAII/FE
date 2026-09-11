@@ -2,7 +2,8 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { QrCode } from "../QrCode/QrCode";
 import Logo from "../../assets/icons/Logo/Logo.svg?react";
-import VerticalLogo from "../../assets/icons/Logo/VerticalLogo.svg?react";
+// 프레임 디자인 임시 변경으로 미사용 (PhotoFrame 우상단 로고 주석 처리)
+// import VerticalLogo from "../../assets/icons/Logo/VerticalLogo.svg?react";
 import PichimothanLogo from "../../assets/icons/Logo/PichimothanLogo.svg?react";
 import MajuhadaLogo from "../../assets/icons/Logo/MajuhadaLogo.svg?react";
 import OvernookLogo from "../../assets/icons/Logo/OvernookLogo.svg?react";
