@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CodeRouteImport } from './routes/$code'
 import { Route as FailRouteImport } from './routes/fail'
 import { Route as IntroRouteImport } from './routes/intro'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -25,6 +26,11 @@ import { Route as IntroLocationCompanyIdRouteImport } from './routes/intro.locat
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CodeRoute = CodeRouteImport.update({
+  id: '/$code',
+  path: '/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FailRoute = FailRouteImport.update({
@@ -87,6 +93,7 @@ const IntroLocationCompanyIdRoute = IntroLocationCompanyIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$code': typeof CodeRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
   '/refund-policy': typeof RefundPolicyRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$code': typeof CodeRoute
   '/fail': typeof FailRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/success': typeof SuccessRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$code': typeof CodeRoute
   '/fail': typeof FailRoute
   '/intro': typeof IntroRouteWithChildren
   '/refund-policy': typeof RefundPolicyRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$code'
     | '/fail'
     | '/intro'
     | '/refund-policy'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$code'
     | '/fail'
     | '/refund-policy'
     | '/success'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$code'
     | '/fail'
     | '/intro'
     | '/refund-policy'
@@ -171,6 +183,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CodeRoute: typeof CodeRoute
   FailRoute: typeof FailRoute
   IntroRoute: typeof IntroRouteWithChildren
   RefundPolicyRoute: typeof RefundPolicyRoute
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$code': {
+      id: '/$code'
+      path: '/$code'
+      fullPath: '/$code'
+      preLoaderRoute: typeof CodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fail': {
@@ -298,6 +318,7 @@ const IntroRouteWithChildren = IntroRoute._addFileChildren(IntroRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CodeRoute: CodeRoute,
   FailRoute: FailRoute,
   IntroRoute: IntroRouteWithChildren,
   RefundPolicyRoute: RefundPolicyRoute,
