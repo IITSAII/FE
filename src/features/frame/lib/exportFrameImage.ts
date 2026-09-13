@@ -122,6 +122,66 @@ function getRelativeRect(
 }
 
 /**
+ * 계산된 CSS `filter` 문자열에서 grayscale 강도(0~1)를 읽는다. 없으면 0.
+ * 브라우저에 따라 `grayscale(1)` 또는 `grayscale(100%)` 형태로 직렬화된다.
+ */
+function parseGrayscaleAmount(cssFilter: string): number {
+  const match = /grayscale\(\s*([\d.]+)(%?)\s*\)/.exec(cssFilter);
+  if (!match) return 0;
+
+  const value = Number(match[1]) / (match[2] === "%" ? 100 : 1);
+  return Number.isFinite(value) ? Math.min(Math.max(value, 0), 1) : 0;
+}
+
+/**
+ * 캔버스의 지정 영역 픽셀을 CSS `grayscale(amount)`와 동일한 행렬로 흑백 변환한다.
+ *
+ * `ctx.filter`는 Safari/WebKit(iPad 키오스크)에서 지원되지 않아 값을 넣어도 조용히
+ * 무시되고, 그 결과 흑백 필터를 골라도 컬러 사진이 그대로 인쇄됐다. 그래서 브라우저
+ * 지원 여부와 무관하게 픽셀을 직접 변환한다. 사진은 `data:` URL이라 캔버스가
+ * 오염(tainted)되지 않아 `getImageData`를 쓸 수 있다.
+ */
+function applyGrayscale(
+  ctx: CanvasRenderingContext2D,
+  rect: { x: number; y: number; width: number; height: number },
+  amount: number,
+): void {
+  const x = Math.max(0, Math.floor(rect.x));
+  const y = Math.max(0, Math.floor(rect.y));
+  const right = Math.min(ctx.canvas.width, Math.ceil(rect.x + rect.width));
+  const bottom = Math.min(ctx.canvas.height, Math.ceil(rect.y + rect.height));
+  const width = right - x;
+  const height = bottom - y;
+  if (width <= 0 || height <= 0) return;
+
+  const imageData = ctx.getImageData(x, y, width, height);
+  const { data } = imageData;
+  const keep = 1 - amount;
+
+  // https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent
+  const rr = 0.2126 + 0.7874 * keep;
+  const rg = 0.7152 - 0.7152 * keep;
+  const rb = 0.0722 - 0.0722 * keep;
+  const gr = 0.2126 - 0.2126 * keep;
+  const gg = 0.7152 + 0.2848 * keep;
+  const gb = 0.0722 - 0.0722 * keep;
+  const br = 0.2126 - 0.2126 * keep;
+  const bg = 0.7152 - 0.7152 * keep;
+  const bb = 0.0722 + 0.9278 * keep;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    data[i] = rr * r + rg * g + rb * b;
+    data[i + 1] = gr * r + gg * g + gb * b;
+    data[i + 2] = br * r + bg * g + bb * b;
+  }
+
+  ctx.putImageData(imageData, x, y);
+}
+
+/**
  * `html-to-image`가 캡처한 캔버스 위에, DOM의 사진 `<img>`와 QR `<canvas>` 요소들을
  * 직접 `drawImage`로 다시 그려 넣는다(patch).
  *
@@ -168,12 +228,6 @@ function patchRasterElementsOntoCanvas(
     ctx.rect(container.x, container.y, container.width, container.height);
     ctx.clip();
 
-    // 사진에 grayscale 등 CSS filter 클래스가 적용돼 있으면 canvas에도 동일하게 반영한다.
-    const cssFilter = window.getComputedStyle(img).filter;
-    if (cssFilter && cssFilter !== "none") {
-      ctx.filter = cssFilter;
-    }
-
     ctx.drawImage(
       img,
       container.x + cover.x,
@@ -183,6 +237,15 @@ function patchRasterElementsOntoCanvas(
     );
 
     ctx.restore();
+
+    // 사진에 grayscale 클래스가 적용돼 있으면 canvas에도 동일하게 반영한다.
+    // 다음 요소(조복 프레임 SVG 등)가 위에 그려지기 전에, 이 사진 영역에만 적용해야 한다.
+    const grayscaleAmount = parseGrayscaleAmount(
+      window.getComputedStyle(img).filter,
+    );
+    if (grayscaleAmount > 0) {
+      applyGrayscale(ctx, container, grayscaleAmount);
+    }
   }
 
   // QR(qr-code-styling)은 useEffect에서 컨테이너에 직접 <canvas>를 append하는 방식이라
