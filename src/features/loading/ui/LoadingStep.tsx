@@ -71,7 +71,7 @@ const LOADING_PHRASES = [
 /** 한 줄이 밝아지는 데 걸리는 간격(ms) */
 const PHRASE_REVEAL_INTERVAL_MS = 1000;
 /** 마지막 줄까지 다 밝아진 뒤 추가로 대기하는 시간(ms) */
-const PHRASE_REVEAL_HOLD_MS = 5000;
+const PHRASE_REVEAL_HOLD_MS = 10000;
 
 /** 결제 확정 직후엔 배정이 아직 끝나지 않아 404(SESSION_404_2)가 날 수 있어 재시도한다. */
 const PARTNER_FETCH_RETRY_DELAY_MS = 2000;
