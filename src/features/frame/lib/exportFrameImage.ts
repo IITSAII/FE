@@ -261,6 +261,10 @@ function patchRasterElementsOntoCanvas(
     const container = getRelativeRect(sourceCanvas, nodeRect, scaleX, scaleY);
     if (container.width === 0 || container.height === 0) continue;
 
+    // QR은 흑백 경계가 또렷해야 스캔이 잘 되는데, 스무딩(안티앨리어싱)을 켠 채로
+    // drawImage하면 모서리가 뿌옇게 번져 대비가 떨어진다. 그리는 동안만 꺼둔다.
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(
       sourceCanvas,
       container.x,
@@ -268,6 +272,7 @@ function patchRasterElementsOntoCanvas(
       container.width,
       container.height,
     );
+    ctx.restore();
   }
 }
 
