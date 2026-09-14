@@ -7,6 +7,7 @@ import Logo from "../../assets/icons/Logo/Logo.svg?react";
 import PichimothanLogo from "../../assets/icons/Logo/PichimothanLogo.svg?react";
 import MajuhadaLogo from "../../assets/icons/Logo/MajuhadaLogo.svg?react";
 import OvernookLogo from "../../assets/icons/Logo/OvernookLogo.svg?react";
+import BanjjakLogo from "../../assets/icons/Logo/BanjjakLogo.svg?react";
 import SaiItdaLogo from "../../assets/icons/Logo/SaiItdaLogo.svg?react";
 import ScanLabelIcon from "../../assets/icons/ScanLabelIcon.svg?react";
 
@@ -67,13 +68,12 @@ export function PhotoFrame({
         return (
           <MajuhadaLogo className="w-53.25 h-11.5 fill-current text-current" />
         );
-      case "overnook":
-        return (
-          <OvernookLogo className="w-67.5 h-11.5 fill-current text-current" />
-        );
       case "banjjak":
+        return (
+          <BanjjakLogo className="w-68.5 h-[32.47px] fill-current text-current" />
+        );
+      case "overnook":
       default:
-        // TODO: 반짝 로고 추가 시 변경
         return (
           <OvernookLogo className="w-67.5 h-11.5 fill-current text-current" />
         );
