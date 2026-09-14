@@ -1,4 +1,13 @@
 import { toCanvas } from "html-to-image";
+import { QR_RENDER_SCALE } from "../../../shared/ui/QrCode/QrCode";
+
+/**
+ * 인화용 캡처 배율. 프레임 CSS 크기(600x1800) 그대로 캡처하면 73px QR의 모듈 하나가
+ * 2.92px라 인쇄 시 도트 경계가 뭉개진다. QR canvas의 내부 해상도와 같은 배율로 캡처해
+ * QR이 리샘플링 없이 1:1로 patch되게 한다. iOS Safari canvas 면적 상한(약 16.7M px) 안에
+ * 들어가야 한다(3배 = 1800x5400 = 9.72M px).
+ */
+const EXPORT_PIXEL_RATIO = QR_RENDER_SCALE;
 
 /** 이미지 하나가 너무 느리게 로드될 때 캡처 전체가 무한정 멈추지 않도록 두는 상한(ms). */
 const IMAGE_LOAD_TIMEOUT_MS = 8000;
@@ -316,7 +325,7 @@ export async function exportFrameImage(node: HTMLElement): Promise<Blob> {
     await waitForCanvasesAndSvgs(node);
 
     const canvas = await toCanvas(node, {
-      pixelRatio: 1,
+      pixelRatio: EXPORT_PIXEL_RATIO,
       cacheBust: true,
     });
 
