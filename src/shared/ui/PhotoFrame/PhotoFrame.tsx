@@ -2,7 +2,8 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { QrCode } from "../QrCode/QrCode";
 import Logo from "../../assets/icons/Logo/Logo.svg?react";
-import VerticalLogo from "../../assets/icons/Logo/VerticalLogo.svg?react";
+// 프레임 디자인 임시 변경으로 미사용 (PhotoFrame 우상단 로고 주석 처리)
+// import VerticalLogo from "../../assets/icons/Logo/VerticalLogo.svg?react";
 import PichimothanLogo from "../../assets/icons/Logo/PichimothanLogo.svg?react";
 import MajuhadaLogo from "../../assets/icons/Logo/MajuhadaLogo.svg?react";
 import OvernookLogo from "../../assets/icons/Logo/OvernookLogo.svg?react";
@@ -123,7 +124,8 @@ export function PhotoFrame({
         {/* 우측 사이드바: 상단 미니 로고 + 세로 텍스트 + 하단 QR 코드 */}
         <div className="h-full flex flex-col items-center justify-between pt-5 pr-5">
           {/* 우상단 잇사이 로고 */}
-          <VerticalLogo className="w-16.25 h-40.25 fill-current text-current" />
+          {/* <VerticalLogo className="w-16.25 h-40.25 fill-current text-current" /> */}
+          <div />
           <div className="flex flex-col gap-8">
             {/* 세로 "scan the" 문구 */}
             <ScanLabelIcon />
