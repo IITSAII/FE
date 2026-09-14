@@ -51,6 +51,21 @@ export const COMPANY_LOCATION_INFO: Partial<
 };
 
 /**
+ * 배정된 제휴업체명으로 CategoryTabs id(예: "overnook")를 찾는다.
+ * QR로 `/intro/{galleryToken}`에 진입했을 때 배정된 업체의 소개 탭을 먼저 보여주는 데 사용한다.
+ * API 업체명의 대소문자 표기("Overnook" 등)가 달라도 매칭되도록 대소문자를 무시한다.
+ */
+export function getCompanyIdByPartnerName(
+  partnerName: string,
+): string | undefined {
+  const normalizedName = partnerName.toLowerCase();
+  return Object.entries(COMPANY_LOCATION_INFO).find(
+    ([, info]) =>
+      info !== undefined && normalizedName.includes(info.name.toLowerCase()),
+  )?.[0];
+}
+
+/**
  * 배정된 제휴업체명으로 정적 업체 위치 정보를 찾는다.
  * `/intro`와 `/intro/{sessionId}`가 같은 썸네일 이미지를 쓰도록,
  * PartnerToast에서도 API가 내려주는 로고 대신 이 정적 이미지를 사용한다.
@@ -58,8 +73,6 @@ export const COMPANY_LOCATION_INFO: Partial<
 export function getCompanyLocationInfoByPartnerName(
   partnerName: string,
 ): CompanyLocationInfo | undefined {
-  return Object.values(COMPANY_LOCATION_INFO).find(
-    (info): info is CompanyLocationInfo =>
-      info !== undefined && partnerName.includes(info.name),
-  );
+  const companyId = getCompanyIdByPartnerName(partnerName);
+  return companyId ? COMPANY_LOCATION_INFO[companyId] : undefined;
 }
