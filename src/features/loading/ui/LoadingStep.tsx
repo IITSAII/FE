@@ -47,6 +47,14 @@ function getPartnerBenefitText(partnerName: string): string {
   return "스탬프 +1 적립 !";
 }
 
+/** 배정된 제휴업체명으로 최종 프레임에 박을 업체 로고 테마를 찾는다. */
+function getPartnerFrameTheme(partnerName: string): PhotoFrameTheme {
+  if (partnerName.includes("피치못한")) return "pichimothan";
+  if (partnerName.includes("반짝")) return "banjjak";
+  if (partnerName.includes("마주하다")) return "majuhada";
+  return "overnook";
+}
+
 export interface LoadingStepProps {
   sessionId: string;
   photos?: string[];
@@ -108,6 +116,11 @@ export function LoadingStep({
   const uploadStartedRef = useRef(false);
 
   const assignedPartnerName = assignedPartner?.name ?? null;
+  // 프레임 업체 로고는 FrameStep에서 고른 값이 아니라 결제 확정 시 배정된 업체를 따른다.
+  // 캡처는 업체 배정(qrCodeUrl 확보) 이후에만 시작하므로 캡처 시점엔 항상 배정 업체 로고가 반영된다.
+  const frameTheme = assignedPartnerName
+    ? getPartnerFrameTheme(assignedPartnerName)
+    : theme;
   // QR/실물 프레임에 박히는 URL은 galleryToken 기반이라, 업체 배정(galleryToken 확보) 전에는
   // 아직 만들 수 없다 — undefined인 동안은 캡처도, 화면 QR도 시작하지 않는다.
   const qrCodeUrl = assignedPartner
@@ -280,7 +293,7 @@ export function LoadingStep({
           ) : (
             <PhotoFrame
               variant={variant}
-              theme={theme}
+              theme={frameTheme}
               photos={photos}
               relationship={relationshipTitle || "Friend"}
               date={date}
