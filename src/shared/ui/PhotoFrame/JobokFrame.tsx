@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "../../lib/utils";
 import { QrCode } from "../QrCode/QrCode";
 import type { PhotoFrameVariant, PhotoFilter } from "./PhotoFrame";
+import { PRINTED_PHOTO_SLOT } from "./printedPhotoSlot";
 import jobokColorUrl from "../../assets/frames/jobok_color.svg";
 import jobokMonoUrl from "../../assets/frames/jobok_mono.svg";
 
@@ -23,10 +24,10 @@ export interface JobokFrameProps extends React.HTMLAttributes<HTMLDivElement> {
 // 뚫려 있어(cutout), 사진/QR을 프레임보다 아래에 깔고 프레임 이미지를 맨 위에 겹치면
 // 별도 마스킹 없이도 정확히 이 자리에 사진/QR이 그대로 노출된다.
 const PHOTO_SLOTS = [
-  { x: 4, y: 4, width: 496, height: 343 },
-  { x: 4, y: 353, width: 496, height: 343 },
-  { x: 4, y: 702, width: 496, height: 343 },
-  { x: 4, y: 1051, width: 496, height: 343 },
+  { x: 4, y: 4, ...PRINTED_PHOTO_SLOT },
+  { x: 4, y: 353, ...PRINTED_PHOTO_SLOT },
+  { x: 4, y: 702, ...PRINTED_PHOTO_SLOT },
+  { x: 4, y: 1051, ...PRINTED_PHOTO_SLOT },
 ];
 
 const QR_SLOT = { x: 515, y: 1317, size: 73 };
