@@ -289,7 +289,9 @@ export function PhotoStep({
   selectedRelationId,
   selectedRelationTitle,
   totalPhotosCount = 6,
-  timerDurationSeconds = 10,
+  // 컷당 촬영 대기 시간. 서버는 이 값을 API로 내려주지 않고, CAPTURE 단계 전체 타임아웃
+  // (BE SessionService.CAPTURE_STEP_TIMEOUT = 90초 = 15초 × 6컷)만 갖고 있으므로 함께 맞춰야 한다.
+  timerDurationSeconds = 15,
   onNext,
 }: PhotoStepProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // 0..5
@@ -592,7 +594,7 @@ export function PhotoStep({
       <main
         className={`w-full max-w-[834px] px-6 flex-1 flex flex-col items-center ${hasRelation ? "pt-18" : "pt-43.25"}`}
       >
-        {/* 상단 진행률 (1/6) 및 타이머 (10) 서브 네비바 */}
+        {/* 상단 진행률 (1/6) 및 타이머 (15) 서브 네비바 */}
         <div className="w-full max-w-[786px] flex items-center justify-between">
           <span className="text-ipad-heading-1-medium text-gray-900">
             {Math.min(currentPhotoIndex + 1, totalPhotosCount)}/
