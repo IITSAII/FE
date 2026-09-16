@@ -7,6 +7,7 @@ import {
   colorCorrectionCssFilter,
   DEFAULT_COLOR_CORRECTION,
 } from "../../frame/lib/colorCorrection";
+import { PRINTED_PHOTO_ASPECT_RATIO } from "../../../shared/ui/PhotoFrame/printedPhotoSlot";
 
 export interface CapturedPhoto {
   photoId: number | null;
@@ -212,6 +213,69 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
   }
 }
 
+/** 프리뷰 위에 그릴 "실제 인화되는 영역" 사각형의 크기(프리뷰 박스 기준 px). */
+interface PrintAreaSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * 인화 영역이 프리뷰보다 넓은 축(= 그 방향으로는 잘리지 않는 축)에서 가이드 선이
+ * 프리뷰 밖으로 나가 보이지 않는 것을 막기 위해, 가이드를 프리뷰 안쪽으로 최소한
+ * 이만큼 들여 그린다(px).
+ */
+const PRINT_GUIDE_EDGE_INSET = 3;
+
+/**
+ * 프리뷰 박스에 표시할 인화 영역(실제 프레임에 찍혀 나오는 범위)의 크기를 계산한다.
+ *
+ * 촬영본은 카메라 원본 해상도 그대로 저장되고(capturePhoto), 프레임의 사진 슬롯은
+ * `object-fit: cover`로 그 촬영본을 인화 비율(PRINTED_PHOTO_ASPECT_RATIO)에 맞춰
+ * 중앙 크롭한다. 프리뷰 <video> 역시 같은 원본을 `object-cover`로 중앙 크롭하므로
+ * 두 영역의 중심은 항상 일치한다. 따라서 인화 영역은 프리뷰 정중앙에 놓인 사각형
+ * 하나로 표현할 수 있고, 여기서는 그 크기만 구하면 된다.
+ *
+ * 원본이 가로로 길면 좌우가, 세로로 길면 위아래가 잘려나가는데, 어느 쪽이 잘리는지는
+ * 기기·카메라마다 달라지므로 비율을 고정하지 않고 실제 video 해상도로 매번 계산한다.
+ */
+function computePrintAreaSize(
+  containerWidth: number,
+  containerHeight: number,
+  videoWidth: number,
+  videoHeight: number,
+): PrintAreaSize | null {
+  if (!containerWidth || !containerHeight || !videoWidth || !videoHeight) {
+    return null;
+  }
+
+  // 프리뷰(object-cover)가 원본 영상을 화면에 그릴 때 적용하는 배율
+  const previewScale = Math.max(
+    containerWidth / videoWidth,
+    containerHeight / videoHeight,
+  );
+
+  // 인화 슬롯(object-cover)이 촬영본에서 실제로 사용하는 영역 (원본 px 기준)
+  const isSourceWiderThanPrint =
+    videoWidth / videoHeight > PRINTED_PHOTO_ASPECT_RATIO;
+  const printedSourceWidth = isSourceWiderThanPrint
+    ? videoHeight * PRINTED_PHOTO_ASPECT_RATIO
+    : videoWidth;
+  const printedSourceHeight = printedSourceWidth / PRINTED_PHOTO_ASPECT_RATIO;
+
+  // 잘리지 않는 축은 인화 영역이 프리뷰보다 넓어 선이 화면 밖으로 밀려나므로,
+  // 그 축만 프리뷰 안쪽으로 당겨 가이드가 항상 눈에 보이게 한다.
+  return {
+    width: Math.min(
+      printedSourceWidth * previewScale,
+      containerWidth - PRINT_GUIDE_EDGE_INSET * 2,
+    ),
+    height: Math.min(
+      printedSourceHeight * previewScale,
+      containerHeight - PRINT_GUIDE_EDGE_INSET * 2,
+    ),
+  };
+}
+
 /**
  * 사진 촬영 플로우 단계 컴포넌트 (PhotoStep)
  * - 웹캠 카메라 화면과 연결하여 실시간 미션 및 6장 자동 촬영을 진행합니다.
@@ -229,6 +293,8 @@ export function PhotoStep({
   const [countdown, setCountdown] = useState(timerDurationSeconds);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  // 프리뷰 위에 표시할 인화 영역 가이드라인 크기 (video 해상도를 알기 전에는 null)
+  const [printAreaSize, setPrintAreaSize] = useState<PrintAreaSize | null>(null);
 
   // 선택한 관계에 해당하는 미션 세트 (관계 미선택/미확인 시 기본 세트)
   const missionSet =
@@ -241,6 +307,7 @@ export function PhotoStep({
   );
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraBoxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const capturedPhotosRef = useRef<CapturedPhoto[]>([]);
@@ -309,6 +376,57 @@ export function PhotoStep({
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
+    };
+  }, []);
+
+  // 인화 영역 가이드라인 갱신
+  // - video 메타데이터가 로드되거나(해상도 확정) 트랙 해상도가 바뀔 때(resize)
+  // - 프리뷰 박스 크기가 바뀔 때(화면 회전 등)
+  useEffect(() => {
+    const video = videoRef.current;
+    const cameraBox = cameraBoxRef.current;
+    if (!video || !cameraBox) return;
+
+    function updatePrintArea() {
+      if (!video || !cameraBox) return;
+
+      const { width, height } = cameraBox.getBoundingClientRect();
+      setPrintAreaSize(
+        computePrintAreaSize(width, height, video.videoWidth, video.videoHeight),
+      );
+    }
+
+    updatePrintArea();
+
+    // 해상도가 확정되는 시점은 브라우저마다 다르다(iPadOS Safari는 loadedmetadata
+    // 시점에도 videoWidth가 0인 경우가 있다). 관련 이벤트를 모두 걸어두고,
+    // 그래도 못 받았을 때를 대비해 해상도를 얻을 때까지 짧게 폴링한다.
+    const READY_EVENTS = [
+      "loadedmetadata",
+      "loadeddata",
+      "canplay",
+      "playing",
+      "resize",
+    ] as const;
+    READY_EVENTS.forEach((event) =>
+      video.addEventListener(event, updatePrintArea),
+    );
+
+    const pollId = window.setInterval(() => {
+      if (!video.videoWidth) return;
+      updatePrintArea();
+      window.clearInterval(pollId);
+    }, 300);
+
+    const resizeObserver = new ResizeObserver(updatePrintArea);
+    resizeObserver.observe(cameraBox);
+
+    return () => {
+      READY_EVENTS.forEach((event) =>
+        video.removeEventListener(event, updatePrintArea),
+      );
+      window.clearInterval(pollId);
+      resizeObserver.disconnect();
     };
   }, []);
 
@@ -486,7 +604,10 @@ export function PhotoStep({
           className={`w-full flex items-start gap-7.5 h-194.5 ${hasRelation ? "pt-12.75" : "pt-9"}`}
         >
           {/* 좌측 카메라 라이브 피드 (585px) */}
-          <div className="relative w-146.25 h-194.5 bg-gray-900 overflow-hidden shrink-0 flex items-center justify-center border-[1.5px] border-gray-300">
+          <div
+            ref={cameraBoxRef}
+            className="relative w-146.25 h-194.5 bg-gray-900 overflow-hidden shrink-0 flex items-center justify-center border-[1.5px] border-gray-300"
+          >
             <video
               ref={videoRef}
               autoPlay
@@ -498,6 +619,33 @@ export function PhotoStep({
               // 실제 저장되는 사진은 capturePhoto()에서 픽셀 단위로 정확히 보정한다.
               style={{ filter: colorCorrectionCssFilter(DEFAULT_COLOR_CORRECTION) }}
             />
+
+            {/* 인화 영역 가이드라인.
+                프리뷰는 세로로 긴 박스지만 프레임의 사진 칸은 가로로 길어(약 1.45:1)
+                촬영본의 일부만 인화된다. 실제로 인화되는 범위를 사각형으로 표시하고
+                바깥쪽은 어둡게 덮어 "여기 안에 들어와야 사진에 남는다"를 보여준다. */}
+            {printAreaSize && !cameraError && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  // 계산된 크기 그대로 그려야 하므로 flex 축소를 막는다.
+                  className="relative shrink-0 border-2 border-dashed border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+                  style={{
+                    width: printAreaSize.width,
+                    height: printAreaSize.height,
+                  }}
+                >
+                  {/* 네 모서리 마커 */}
+                  <span className="absolute -top-px -left-px w-9 h-9 border-t-4 border-l-4 border-white" />
+                  <span className="absolute -top-px -right-px w-9 h-9 border-t-4 border-r-4 border-white" />
+                  <span className="absolute -bottom-px -left-px w-9 h-9 border-b-4 border-l-4 border-white" />
+                  <span className="absolute -bottom-px -right-px w-9 h-9 border-b-4 border-r-4 border-white" />
+
+                  <span className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/55 text-white text-ipad-body-2-light whitespace-nowrap">
+                    이 안쪽이 사진으로 인화돼요
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* 카메라 에러 또는 시뮬레이션 알림 */}
             {cameraError && (
