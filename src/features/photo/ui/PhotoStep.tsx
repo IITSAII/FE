@@ -226,6 +226,9 @@ interface PrintAreaSize {
  */
 const PRINT_GUIDE_EDGE_INSET = 3;
 
+/** 촬영 순간 플래시 오버레이가 화면에 남아 있는 시간(ms). fade-out 애니메이션 길이(duration-300)와 맞춘다. */
+const FLASH_DURATION_MS = 300;
+
 /**
  * 프리뷰 박스에 표시할 인화 영역(실제 프레임에 찍혀 나오는 범위)의 크기를 계산한다.
  *
@@ -293,6 +296,9 @@ export function PhotoStep({
   const [countdown, setCountdown] = useState(timerDurationSeconds);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  // 촬영 순간 플래시 표시 여부. 카운트다운 숫자가 아니라 실제 capturePhoto() 시점에 켜야
+  // 애니메이션과 실제 촬영 시점이 어긋나지 않는다(어긋나면 사용자가 포즈를 더 유지해야 한다).
+  const [isFlashing, setIsFlashing] = useState(false);
   // 프리뷰 위에 표시할 인화 영역 가이드라인 크기 (video 해상도를 알기 전에는 null)
   const [printAreaSize, setPrintAreaSize] = useState<PrintAreaSize | null>(null);
 
@@ -499,6 +505,7 @@ export function PhotoStep({
     if (countdown === 0) {
       const shotNumber = currentPhotoIndex + 1;
       const dataUrl = capturePhoto();
+      setIsFlashing(true);
       updateCapturedPhotos((photos) => [
         ...photos,
         { photoId: null, shotNumber, dataUrl },
@@ -543,6 +550,17 @@ export function PhotoStep({
     sessionId,
     updateCapturedPhotos,
   ]);
+
+  // 플래시는 켜진 뒤 애니메이션 길이만큼만 유지하고 스스로 꺼진다.
+  useEffect(() => {
+    if (!isFlashing) return;
+
+    const timer = window.setTimeout(
+      () => setIsFlashing(false),
+      FLASH_DURATION_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isFlashing]);
 
   // capturedPhotos가 totalPhotosCount에 도달하면, 업로드가 모두 끝난 뒤 정확히 한 번 onNext 호출
   useEffect(() => {
@@ -658,7 +676,7 @@ export function PhotoStep({
             )}
 
             {/* 촬영 순간 플래시 효과 */}
-            {countdown === 1 && (
+            {isFlashing && (
               <div className="absolute inset-0 bg-white opacity-80 animate-out fade-out duration-300 pointer-events-none" />
             )}
           </div>
