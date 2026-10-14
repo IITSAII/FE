@@ -47,6 +47,9 @@ export function PaymentStep({
   const [stepExpiresAt, setStepExpiresAt] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const paymentWindowRef = useRef<PaymentWindow | null>(null);
+  // 만료되었거나 언마운트되어 더 이상 결제창을 띄우면 안 되는 상태인지 여부.
+  // renderPaymentWindow()가 진행 중일 때 만료/이탈이 일어나면, 뒤늦게 열린 결제창을 바로 닫는 데 쓴다.
+  const isClosedRef = useRef(false);
   const onSessionCreatedRef = useRef(onSessionCreated);
   onSessionCreatedRef.current = onSessionCreated;
 
@@ -70,10 +73,27 @@ export function PaymentStep({
   const handleExpire = () => {
     setIsExpired(true);
     setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
-    paymentWindowRef.current?.destroy().catch(() => {});
+    isClosedRef.current = true;
+    const paymentWindow = paymentWindowRef.current;
     paymentWindowRef.current = null;
-    setTimeout(() => onExpire?.(), 1500);
+    paymentWindow?.destroy().catch(() => {});
+    setTimeout(() => {
+      onExpire?.();
+      // 결제창을 연 적이 있으면 destroy()만으로는 토스 SDK가 body에 붙인 결제 화면(결제 진행 중인
+      // 카드사 인증 화면 등)이 남을 수 있다. 전체 새로고침으로 SDK DOM을 확실히 정리한다.
+      if (paymentWindow) window.location.replace("/");
+    }, 1500);
   };
+
+  // 만료 외의 경로로 결제 단계를 벗어나는 경우에도 열린 결제창을 닫는다.
+  useEffect(() => {
+    isClosedRef.current = false;
+    return () => {
+      isClosedRef.current = true;
+      paymentWindowRef.current?.destroy().catch(() => {});
+      paymentWindowRef.current = null;
+    };
+  }, []);
 
   const { secondsLeft } = useCountdown({
     expiresAt: stepExpiresAt,
@@ -179,6 +199,12 @@ export function PaymentStep({
           agreement: "AGREEMENT",
         },
       });
+
+      // 결제창이 열리는 사이에 만료되었거나 결제 단계를 벗어났다면, 보관하지 않고 바로 닫는다.
+      if (isClosedRef.current) {
+        await paymentWindow.destroy().catch(() => {});
+        return;
+      }
 
       // 결제창이 열려있는 동안 타이머가 만료되면(handleExpire) 강제로 닫을 수 있도록 참조를 보관한다.
       paymentWindowRef.current = paymentWindow;
@@ -293,6 +319,8 @@ export function PaymentStep({
           <IconButton
             variant="outline"
             onClick={onBack}
+            // 만료 후에는 인트로 복귀(onExpire)가 끝날 때까지 다른 경로로 이탈하지 못하게 막는다.
+            disabled={isExpired}
             aria-label="이전 단계로 이동"
           >
             <LeftArrowIcon className="w-8 h-8 text-gray-500" />
