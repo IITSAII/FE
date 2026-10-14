@@ -70,10 +70,24 @@ export function PaymentStep({
   const handleExpire = () => {
     setIsExpired(true);
     setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
-    paymentWindowRef.current?.destroy().catch(() => {});
+    const paymentWindow = paymentWindowRef.current;
     paymentWindowRef.current = null;
-    setTimeout(() => onExpire?.(), 1500);
+    paymentWindow?.destroy().catch(() => {});
+    setTimeout(() => {
+      onExpire?.();
+      // 결제창을 연 적이 있으면 destroy()만으로는 토스 SDK가 body에 붙인 결제 화면(결제 진행 중인
+      // 카드사 인증 화면 등)이 남을 수 있다. 전체 새로고침으로 SDK DOM을 확실히 정리한다.
+      if (paymentWindow) window.location.replace("/");
+    }, 1500);
   };
+
+  // 만료 외의 경로로 결제 단계를 벗어나는 경우에도 열린 결제창을 닫는다.
+  useEffect(() => {
+    return () => {
+      paymentWindowRef.current?.destroy().catch(() => {});
+      paymentWindowRef.current = null;
+    };
+  }, []);
 
   const { secondsLeft } = useCountdown({
     expiresAt: stepExpiresAt,
