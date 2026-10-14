@@ -33,6 +33,30 @@ export const Route = createFileRoute("/")({
   component: SnapFlowPage,
 });
 
+/** 수량 선택 결과(인원 수/금액)를 플로우 재마운트 후에도 유지하기 위한 세션 키. */
+const QUANTITY_STORAGE_KEY = "payment_quantity";
+
+function readStoredQuantity(): QuantityStepData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(
+      sessionStorage.getItem(QUANTITY_STORAGE_KEY) ?? "null",
+    ) as Partial<QuantityStepData> | null;
+    if (
+      typeof parsed?.personnelCount === "number" &&
+      typeof parsed.totalPrice === "number"
+    ) {
+      return {
+        personnelCount: parsed.personnelCount,
+        totalPrice: parsed.totalPrice,
+      };
+    }
+  } catch {
+    // 손상된 값은 무시하고 수량 선택부터 다시 진행한다.
+  }
+  return null;
+}
+
 function SnapFlowPage() {
   const searchParams =
     typeof window !== "undefined"
@@ -52,8 +76,10 @@ function SnapFlowPage() {
       );
     })();
 
+  // 결제 실패/취소로 /fail → / 리다이렉트되면 이 컴포넌트가 새로 마운트되므로,
+  // 수량 선택 결과를 sessionStorage에서 복원한다(없으면 결제 단계가 기본값 2인으로 세션을 만든다).
   const [quantityData, setQuantityData] = useState<QuantityStepData | null>(
-    null,
+    readStoredQuantity,
   );
 
   const postPaymentSteps: FlowStep[] = [
@@ -64,8 +90,12 @@ function SnapFlowPage() {
     "loading",
   ];
   const isPostPaymentStep = postPaymentSteps.includes(requestedStep);
+  // 수량 정보 없이 결제 단계로 진입하면 임의 기본값으로 결제하지 않도록 수량 선택부터 다시 진행한다.
+  const isPaymentStepWithoutQuantity =
+    requestedStep === "payment" && quantityData == null;
   const initialStep: FlowStep =
-    isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession
+    (isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession) ||
+    isPaymentStepWithoutQuantity
       ? "quantity"
       : requestedStep;
 
@@ -88,6 +118,7 @@ function SnapFlowPage() {
   };
 
   const handleQuantityNext = (data: QuantityStepData) => {
+    sessionStorage.setItem(QUANTITY_STORAGE_KEY, JSON.stringify(data));
     setQuantityData(data);
     setCurrentStep("payment");
   };
@@ -119,6 +150,9 @@ function SnapFlowPage() {
   const handleResetFlow = () => {
     sessionStorage.removeItem("payment_session_id");
     sessionStorage.removeItem("payment_confirmed_session_id");
+    sessionStorage.removeItem(QUANTITY_STORAGE_KEY);
+    // 결제 화면에 도달하지 못해 소비되지 않은 실패 플래그가 다음 사용자에게 실패 모달로 뜨지 않도록 지운다.
+    sessionStorage.removeItem("payment_failed");
     setSessionId(null);
     setQuantityData(null);
     setRelationData(null);
