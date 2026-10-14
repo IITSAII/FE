@@ -52,6 +52,12 @@ export async function createSession(
 }
 
 /**
+ * 결제 승인 요청 타임아웃. 서버가 토스 승인 API를 최대 13초(연결 3초 + 응답 10초)까지 기다리므로,
+ * 기본 타임아웃(10초)으로는 서버가 승인에 성공했는데 프론트만 실패로 끝나는 경우가 생긴다.
+ */
+const CONFIRM_PAYMENT_TIMEOUT_MS = 30_000;
+
+/**
  * 결제 승인. orderId는 보내지 않는다 — 서버가 경로의 sessionId를 orderId로 사용한다.
  * amount가 서버가 아는 세션 금액과 다르면 토스 호출 없이 거부된다.
  */
@@ -63,7 +69,7 @@ export async function confirmPayment(
   const { data } = await api.post<SessionStatusResponse>(
     `/sessions/${sessionId}/payment/confirm`,
     params,
-    { signal },
+    { signal, timeout: CONFIRM_PAYMENT_TIMEOUT_MS },
   );
   return data;
 }
