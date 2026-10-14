@@ -29,6 +29,17 @@ export type FlowStep =
   | "frame"
   | "loading";
 
+const FLOW_STEPS: FlowStep[] = [
+  "intro",
+  "quantity",
+  "payment",
+  "relation",
+  "photo",
+  "select-photo",
+  "frame",
+  "loading",
+];
+
 export const Route = createFileRoute("/")({
   component: SnapFlowPage,
 });
@@ -38,7 +49,11 @@ function SnapFlowPage() {
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
       : null;
-  const requestedStep = (searchParams?.get("step") as FlowStep) || "intro";
+  const stepParam = searchParams?.get("step");
+  // 목록에 없는 step 값이면 어떤 단계도 렌더링되지 않아 빈 화면이 되므로 인트로로 보낸다.
+  const requestedStep: FlowStep = FLOW_STEPS.includes(stepParam as FlowStep)
+    ? (stepParam as FlowStep)
+    : "intro";
 
   const hasValidatedPaymentSession =
     typeof window !== "undefined" &&
