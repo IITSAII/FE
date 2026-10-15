@@ -17,6 +17,9 @@ import { createSession, getSessionStatus } from "../api/paymentApi";
 /** 결제 실패 후 재진입 시 실패 모달을 자동으로 띄우기 위한 세션 플래그. */
 const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
 
+/** 세션 상태 조회 실패 시 쓰는 결제 단계 타이머(초). BE `PAYMENT_STEP_TIMEOUT`(60초)과 맞춘다. */
+const PAYMENT_STEP_FALLBACK_SECONDS = 60;
+
 type PaymentWindow = Awaited<
   ReturnType<TossPaymentsWidgets["renderPaymentWindow"]>
 >;
@@ -123,6 +126,9 @@ export function PaymentStep({
       try {
         setIsLoading(true);
 
+        // 서버는 세션 생성 시점부터 결제 단계 타임아웃을 센다. 요청 직전 시각은 서버 생성 시각보다
+        // 항상 앞서므로, 상태 조회 실패 시 이 시각을 기준으로 잡으면 로컬 타이머가 서버보다 늦게 끝나지 않는다.
+        const sessionRequestedAt = Date.now();
         const session = await createSession(personnelCount, controller.signal);
 
         const nextSessionId = session.sessionId;
@@ -146,8 +152,16 @@ export function PaymentStep({
           );
           if (isMounted) setStepExpiresAt(status.stepExpiresAt);
         } catch (statusErr) {
-          if (!(isApiError(statusErr) && statusErr.code === "CANCELED")) {
-            console.error("세션 상태 조회 실패:", statusErr);
+          if (isApiError(statusErr) && statusErr.code === "CANCELED") return;
+          console.error("세션 상태 조회 실패:", statusErr);
+          // 만료 시각을 못 받으면 타이머가 아예 돌지 않아 결제 화면이 무기한 남는다.
+          // 세션 생성 요청 시각 기준으로 서버 결제 단계 타임아웃만큼 로컬에서 만료 시각을 잡는다.
+          if (isMounted) {
+            setStepExpiresAt(
+              new Date(
+                sessionRequestedAt + PAYMENT_STEP_FALLBACK_SECONDS * 1000,
+              ).toISOString(),
+            );
           }
         }
 
