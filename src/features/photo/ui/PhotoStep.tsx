@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MissionCard } from "../../../shared/ui/Card/MissionCard";
 import { uploadPhoto } from "../api/photoApi";
 import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
+import { withRetry } from "../../../shared/lib/retry";
 import {
   applyColorCorrectionToImageData,
   colorCorrectionCssFilter,
@@ -514,10 +515,9 @@ export function PhotoStep({
       ]);
 
       // 촬영 즉시 백엔드에 업로드하고, 완료되면 로컬 상태에 photoId를 반영한다.
-      const uploadPromise = uploadPhoto(
-        sessionId,
-        shotNumber,
-        dataUrlToBlob(dataUrl),
+      // 일시적인 네트워크 오류는 재시도하고, 그래도 실패한 사진은 사진 선택 단계에서 다시 업로드한다.
+      const uploadPromise = withRetry(() =>
+        uploadPhoto(sessionId, shotNumber, dataUrlToBlob(dataUrl)),
       )
         .then((info) => {
           updateCapturedPhotos((photos) =>

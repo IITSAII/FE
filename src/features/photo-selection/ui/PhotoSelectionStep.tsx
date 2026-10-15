@@ -4,6 +4,9 @@ import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { selectPhotos } from "../api/photoSelectionApi";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
+import { getPhotos, uploadPhoto } from "../../photo/api/photoApi";
+import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
+import { withRetry } from "../../../shared/lib/retry";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
 
 export interface PhotoSelectionStepData {
@@ -36,6 +39,42 @@ function pickRandomIndices(
 }
 
 /**
+ * photoId가 없는(촬영 중 업로드 실패) 사진의 photoId를 채운다.
+ * 응답만 끊기고 서버에는 저장된 경우가 있으므로 서버 목록을 먼저 확인하고, 없으면 다시 업로드한다.
+ * 그래도 실패한 사진은 photoId가 null인 채로 반환한다.
+ */
+async function resolvePhotoIds(
+  sessionId: string,
+  photos: CapturedPhoto[],
+): Promise<CapturedPhoto[]> {
+  if (photos.every((photo) => photo.photoId != null)) return photos;
+
+  const uploaded = await getPhotos(sessionId).catch(() => []);
+  const photoIdByShot = new Map(
+    uploaded.map((info) => [info.shotNumber, info.photoId]),
+  );
+
+  return Promise.all(
+    photos.map(async (photo) => {
+      if (photo.photoId != null) return photo;
+
+      const uploadedId = photoIdByShot.get(photo.shotNumber);
+      if (uploadedId != null) return { ...photo, photoId: uploadedId };
+
+      try {
+        const info = await withRetry(() =>
+          uploadPhoto(sessionId, photo.shotNumber, dataUrlToBlob(photo.dataUrl)),
+        );
+        return { ...photo, photoId: info.photoId };
+      } catch (err) {
+        console.error(`사진 재업로드 실패 (shot ${photo.shotNumber}):`, err);
+        return photo;
+      }
+    }),
+  );
+}
+
+/**
  * 6개 사진 중 4개 사진 선택 플로우 단계 컴포넌트 (PhotoSelectionStep)
  * - 이전 단계에서 촬영한 6장의 사진 중 4장을 선택하여 우측 메인 프레임에 배치합니다.
  */
@@ -48,6 +87,7 @@ export function PhotoSelectionStep({
   // 선택된 사진들의 인덱스 목록 (선택된 순서 보장: 0..3)
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const hasSubmittedRef = useRef(false);
 
   const { status } = useStepExpiry(sessionId);
@@ -68,47 +108,51 @@ export function PhotoSelectionStep({
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
     setIsSubmitting(true);
-
-    const finalIndices =
-      indicesToSubmit.length >= maxSelectCount
-        ? indicesToSubmit.slice(0, maxSelectCount)
-        : [
-            ...indicesToSubmit,
-            ...pickRandomIndices(
-              capturedPhotos.length,
-              indicesToSubmit,
-              maxSelectCount - indicesToSubmit.length,
-            ),
-          ];
-
-    const selectedPhotos = finalIndices.map((idx) => capturedPhotos[idx]);
-    const photoIds = selectedPhotos
-      .map((photo) => photo?.photoId)
-      .filter((id): id is number => id != null);
+    setSubmitError(null);
 
     try {
+      // 촬영 중 업로드에 실패해 photoId가 없는 사진이 있으면 여기서 보정한다.
+      // (6장이 모두 업로드돼야 서버가 SELECT 단계로 넘어가므로, 보정 없이는 선택 저장이 항상 실패한다.)
+      const photos = await resolvePhotoIds(sessionId, capturedPhotos);
+
+      // 랜덤으로 채울 때는 업로드가 끝난(photoId가 있는) 사진만 후보로 쓴다.
+      const missingIdIndices = photos.flatMap((photo, idx) =>
+        photo.photoId == null ? [idx] : [],
+      );
+      const finalIndices =
+        indicesToSubmit.length >= maxSelectCount
+          ? indicesToSubmit.slice(0, maxSelectCount)
+          : [
+              ...indicesToSubmit,
+              ...pickRandomIndices(
+                photos.length,
+                [...indicesToSubmit, ...missingIdIndices],
+                maxSelectCount - indicesToSubmit.length,
+              ),
+            ];
+
+      const selectedPhotos = finalIndices.map((idx) => photos[idx]);
+      const photoIds = selectedPhotos
+        .map((photo) => photo?.photoId)
+        .filter((id): id is number => id != null);
+
       if (photoIds.length !== maxSelectCount) {
         throw new Error(
           "일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.",
         );
       }
       await selectPhotos(sessionId, photoIds);
+      onNext?.({ selectedPhotos });
     } catch (err) {
       console.error("사진 선택 저장 실패:", err);
       hasSubmittedRef.current = false;
       setIsSubmitting(false);
-      alert("사진 선택 저장에 실패했습니다. 다시 시도해주세요.");
-      return;
+      setSubmitError("사진 선택 저장에 실패했습니다. 다시 시도해주세요.");
     }
-
-    onNext?.({ selectedPhotos });
   };
 
   const handleNextStep = () => {
-    if (selectedIndices.length < maxSelectCount) {
-      alert(`사진 ${maxSelectCount}장을 모두 선택해 주세요!`);
-      return;
-    }
+    if (selectedIndices.length < maxSelectCount) return;
     proceed(selectedIndices);
   };
 
@@ -142,7 +186,7 @@ export function PhotoSelectionStep({
             사진을 선택해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            최대 {maxSelectCount}장까지 선택 가능해요.
+            {submitError ?? `최대 ${maxSelectCount}장까지 선택 가능해요.`}
           </p>
         </div>
 
