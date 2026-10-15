@@ -5,6 +5,10 @@ import {
   QuantityStep,
   type QuantityStepData,
 } from "../features/quantity/ui/QuantityStep";
+import {
+  ALLOWED_PERSONNEL_COUNTS,
+  PRICE_PER_PERSON,
+} from "../features/quantity/lib/pricing";
 import { PaymentStep } from "../features/payment/ui/PaymentStep";
 import {
   RelationStep,
@@ -42,13 +46,15 @@ function readStoredQuantity(): QuantityStepData | null {
     const parsed = JSON.parse(
       sessionStorage.getItem(QUANTITY_STORAGE_KEY) ?? "null",
     ) as Partial<QuantityStepData> | null;
+    const personnelCount = parsed?.personnelCount;
+    // 허용된 인원 수만 복원하고, 금액은 저장값 대신 인원 수로 다시 계산해 둘이 어긋나지 않게 한다.
     if (
-      typeof parsed?.personnelCount === "number" &&
-      typeof parsed.totalPrice === "number"
+      typeof personnelCount === "number" &&
+      ALLOWED_PERSONNEL_COUNTS.includes(personnelCount)
     ) {
       return {
-        personnelCount: parsed.personnelCount,
-        totalPrice: parsed.totalPrice,
+        personnelCount,
+        totalPrice: personnelCount * PRICE_PER_PERSON,
       };
     }
   } catch {
