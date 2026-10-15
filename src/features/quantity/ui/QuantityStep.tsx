@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PersonnelCard } from "../../../shared/ui/Card/PersonnelCard";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
+import { PRICE_PER_PERSON } from "../lib/pricing";
 import MinusIcon from "../../../shared/assets/icons/MinusIcon.svg?react";
 import PlusIcon from "../../../shared/assets/icons/PlusIcon.svg?react";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
@@ -27,7 +28,6 @@ export interface QuantityStepProps {
  */
 export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
   const [personnelCount, setPersonnelCount] = useState(2);
-  const pricePerPerson = 1500;
 
   const { secondsLeft } = useCountdown({
     durationSeconds: TIMER_DURATION_SECONDS,
@@ -42,7 +42,7 @@ export function QuantityStep({ onNext, onExpire }: QuantityStepProps) {
     setPersonnelCount((prev) => Math.min(6, prev + 2));
   };
 
-  const totalPrice = personnelCount * pricePerPerson;
+  const totalPrice = personnelCount * PRICE_PER_PERSON;
 
   const handleNextStep = () => {
     if (onNext) {
