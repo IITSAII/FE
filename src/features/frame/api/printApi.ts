@@ -1,5 +1,8 @@
 import { api } from "../../../shared/lib/axios";
 
+/** 최종 이미지는 3배 해상도 PNG(수 MB)라 기본 타임아웃(10초)으로는 업로드 도중 끊길 수 있다. */
+const FINAL_IMAGE_UPLOAD_TIMEOUT_MS = 60_000;
+
 export type FrameType = "DARK" | "LIGHT" | "JobokPink" | "JobokDark";
 export type PrintJobStatus = "QUEUED" | "PRINTING" | "DONE" | "FAILED";
 
@@ -54,7 +57,11 @@ export async function uploadFinalImage(
   const { data } = await api.post<{ finalImageUrl: string }>(
     `/sessions/${sessionId}/print/final-image`,
     formData,
-    { signal, headers: { "Content-Type": undefined } },
+    {
+      signal,
+      timeout: FINAL_IMAGE_UPLOAD_TIMEOUT_MS,
+      headers: { "Content-Type": undefined },
+    },
   );
   return data;
 }

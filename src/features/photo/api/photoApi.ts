@@ -1,5 +1,8 @@
 import { api } from "../../../shared/lib/axios";
 
+/** 원본 해상도 PNG 업로드라 기본 타임아웃(10초)으로는 키오스크 네트워크에서 끊길 수 있다. */
+const PHOTO_UPLOAD_TIMEOUT_MS = 30_000;
+
 export interface PhotoInfo {
   photoId: number;
   shotNumber: number;
@@ -23,7 +26,11 @@ export async function uploadPhoto(
   const { data } = await api.post<PhotoInfo>(
     `/sessions/${sessionId}/photos`,
     formData,
-    { signal, headers: { "Content-Type": undefined } },
+    {
+      signal,
+      timeout: PHOTO_UPLOAD_TIMEOUT_MS,
+      headers: { "Content-Type": undefined },
+    },
   );
   return data;
 }

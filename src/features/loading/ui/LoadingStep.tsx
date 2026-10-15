@@ -11,6 +11,8 @@ import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
+import { getSessionStatus } from "../../payment/api/paymentApi";
+import { withRetry } from "../../../shared/lib/retry";
 import type { FrameDesign } from "../../frame/ui/FrameStep";
 import {
   getAssignedPartner,
@@ -226,10 +228,22 @@ export function LoadingStep({
           throw new Error("캡처할 프레임을 찾을 수 없습니다.");
         }
         const blob = await exportFrameImage(captureNodeRef.current);
-        await uploadFinalImage(sessionId, blob);
+        await withRetry(() => uploadFinalImage(sessionId, blob));
         setIsUploadDone(true);
         setUploadError(null);
       } catch (err) {
+        // 응답만 끊기고 서버에는 업로드된 경우(이미 PRINT 단계로 전이) 재시도해도 실패하므로,
+        // 실패로 처리하기 전에 세션 단계를 확인해 이미 넘어갔으면 완료로 본다.
+        const status = await getSessionStatus(sessionId).catch(() => null);
+        if (
+          status?.currentStep === "PRINT" ||
+          status?.currentStep === "DONE"
+        ) {
+          setIsUploadDone(true);
+          setUploadError(null);
+          return;
+        }
+
         // 캡처(exportFrameImage) 단계에서 실패하면 업로드 요청 자체가 나가지 않으므로,
         // 실패 지점(캡처 vs 업로드)과 원인을 구분할 수 있도록 에러 정보를 자세히 남긴다.
         console.error("최종 이미지 업로드 실패:", {
