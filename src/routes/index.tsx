@@ -114,8 +114,9 @@ function SnapFlowPage() {
   // 수량 정보 없이 결제 단계로 진입하면 임의 기본값으로 결제하지 않도록 수량 선택부터 다시 진행한다.
   const isPaymentStepWithoutQuantity =
     requestedStep === "payment" && quantityData == null;
+  // 결제 후 단계는 수량 값이 있어도 결제가 확인된 세션만 진입할 수 있다.
   const initialStep: FlowStep =
-    (isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession) ||
+    (isPostPaymentStep && !hasValidatedPaymentSession) ||
     isPaymentStepWithoutQuantity
       ? "quantity"
       : requestedStep;
