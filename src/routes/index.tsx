@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { IntroStep } from "../features/intro/ui/IntroStep";
 import {
   QuantityStep,
@@ -75,6 +75,7 @@ function readStoredQuantity(): QuantityStepData | null {
 }
 
 function SnapFlowPage() {
+  const navigate = useNavigate();
   const searchParams =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
@@ -182,6 +183,8 @@ function SnapFlowPage() {
     setSelectedPhotoData(null);
     setFrameData(null);
     setCurrentStep("intro");
+    // 이전 사용자의 ?step= 값이 남아 있으면 다음 사용자가 새로고침할 때 그 단계로 진입한다.
+    navigate({ to: "/", replace: true });
   };
 
   const handleBackToQuantity = () => {
