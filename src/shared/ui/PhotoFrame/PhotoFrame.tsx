@@ -10,8 +10,7 @@ import OvernookLogo from "../../assets/icons/Logo/OvernookLogo.svg?react";
 import BanjjakLogo from "../../assets/icons/Logo/BanjjakLogo.svg?react";
 import SaiItdaLogo from "../../assets/icons/Logo/SaiItdaLogo.svg?react";
 import ScanLabelIcon from "../../assets/icons/ScanLabelIcon.svg?react";
-
-export type PhotoFrameVariant = "dark" | "light";
+import type { PhotoFramePalette } from "./frames";
 
 export type PhotoFrameTheme =
   | "pichimothan"
@@ -22,8 +21,8 @@ export type PhotoFrameTheme =
 export type PhotoFilter = "default" | "grayscale";
 
 export interface PhotoFrameProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** 프레임 색상 테마 ("dark" = 다크 그린/블랙, "light" = 아이보리/크림) */
-  variant?: PhotoFrameVariant;
+  /** 프레임 색상 묶음 (frames.ts) */
+  palette: PhotoFramePalette;
   /** 프레임 타이틀/브랜드 테마 ("pichimothan" | "majuhada" | "overnook" | "banjjak") */
   theme?: PhotoFrameTheme;
   /** 4장의 사진 이미지 URL 배열 (최대 4장) */
@@ -44,7 +43,7 @@ export interface PhotoFrameProps extends React.HTMLAttributes<HTMLDivElement> {
  * 잇, 사이 네컷 사진 프레임 컴포넌트 (PhotoFrame)
  */
 export function PhotoFrame({
-  variant = "dark",
+  palette,
   theme = "pichimothan",
   photos = [],
   relationship = "Friend",
@@ -80,13 +79,11 @@ export function PhotoFrame({
     }
   };
 
-  const isDark = variant === "dark";
-
   return (
     <div
       className={cn(
         "relative w-150 h-450 flex flex-col select-none overflow-hidden gap-22.5",
-        isDark ? "bg-frame-dark text-white" : "bg-frame-light text-green-500",
+        palette.rootClassName,
         className,
       )}
       {...props}
@@ -100,7 +97,7 @@ export function PhotoFrame({
               key={idx}
               className={cn(
                 "w-full h-85.75 overflow-hidden flex items-center justify-center relative",
-                isDark ? "bg-iphone-background" : "bg-frame-dark",
+                palette.photoSlotClassName,
               )}
             >
               {/* photos는 촬영 시 캔버스에서 만든 data: URL이라 항상 same-origin이다.
@@ -132,16 +129,12 @@ export function PhotoFrame({
 
             {/* 하단 QR 코드 박스 */}
             {qrCodeUrl ? (
-              isDark ? (
-                <QrCode url={qrCodeUrl} size={73} />
-              ) : (
-                <QrCode
-                  url={qrCodeUrl}
-                  backgroundColor="#F9F5ED"
-                  dotsColor="#4ca858"
-                  size={73}
-                />
-              )
+              <QrCode
+                url={qrCodeUrl}
+                backgroundColor={palette.qrBackgroundColor}
+                dotsColor={palette.qrDotsColor}
+                size={73}
+              />
             ) : (
               <div className="size-18.25 bg-black" />
             )}
@@ -163,18 +156,12 @@ export function PhotoFrame({
                 <div className="flex-1 h-4.5 flex gap-2.5">
                   <div className="h-full flex-1 flex flex-col justify-end">
                     <div
-                      className={cn(
-                        "w-full h-2",
-                        isDark ? "bg-iphone-background" : "bg-green-500",
-                      )}
+                      className={cn("w-full h-2", palette.dividerClassName)}
                     />
                   </div>
                   <div className="h-full w-fit flex flex-col justify-start">
                     <div
-                      className={cn(
-                        "size-2",
-                        isDark ? "bg-iphone-background" : "bg-green-500",
-                      )}
+                      className={cn("size-2", palette.dividerClassName)}
                     />
                   </div>
                 </div>
