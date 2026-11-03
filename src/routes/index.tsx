@@ -139,6 +139,8 @@ function SnapFlowPage() {
   };
 
   const handleQuantityNext = (data: QuantityStepData) => {
+    // 실패 복귀는 수량 선택을 거치지 않으므로, 여기까지 남은 실패 플래그는 이번 결제와 무관하다.
+    sessionStorage.removeItem("payment_failed");
     sessionStorage.setItem(QUANTITY_STORAGE_KEY, JSON.stringify(data));
     setQuantityData(data);
     setCurrentStep("payment");
