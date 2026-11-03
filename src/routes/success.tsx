@@ -63,6 +63,10 @@ function SuccessPage() {
         navigate({ to: "/", search: { step: "payment" } });
       };
 
+      // withRetry는 마지막 에러만 던진다. 앞선 시도가 불확실했다면 마지막 에러가 명확한 실패여도
+      // 첫 요청이 서버에서 승인됐을 수 있으므로, 시도 이력을 따로 기억한다.
+      let sawUncertainOutcome = false;
+
       try {
         const result = await withRetry(
           () =>
@@ -74,7 +78,11 @@ function SuccessPage() {
           {
             retries: CONFIRM_RETRIES,
             delayMs: CONFIRM_RETRY_DELAY_MS,
-            shouldRetry: isUncertainConfirmError,
+            shouldRetry: (retryErr) => {
+              const isUncertain = isUncertainConfirmError(retryErr);
+              if (isUncertain) sawUncertainOutcome = true;
+              return isUncertain;
+            },
           },
         );
 
@@ -106,7 +114,10 @@ function SuccessPage() {
 
         // 결과를 끝내 알 수 없으면 새 세션으로 재결제하게 두지 않는다. 첫 결제가 서버에서 승인됐다면
         // 이중 청구되고, 이 승인은 세션이 만료된 경우에만 자동 취소되기 때문이다.
-        if (isUncertainConfirmError(err) && !isSessionExpired) {
+        if (
+          (sawUncertainOutcome || isUncertainConfirmError(err)) &&
+          !isSessionExpired
+        ) {
           setIsUnresolved(true);
           return;
         }
