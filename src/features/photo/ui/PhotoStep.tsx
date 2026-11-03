@@ -290,8 +290,8 @@ export function PhotoStep({
   selectedRelationId,
   selectedRelationTitle,
   totalPhotosCount = 6,
-  // 컷당 촬영 대기 시간. 서버는 이 값을 API로 내려주지 않고, CAPTURE 단계 전체 타임아웃
-  // (BE SessionService.CAPTURE_STEP_TIMEOUT = 120초 = 20초 × 6컷)만 갖고 있으므로 함께 맞춰야 한다.
+  // 컷당 촬영 대기 시간(20초 × 6컷 = 120초). 서버는 이 값을 API로 내려주지 않는다.
+  // BE CAPTURE_STEP_TIMEOUT은 90초로 더 짧지만, 현재 BE는 촬영 업로드에서 만료를 검사하지 않아 영향이 없다.
   timerDurationSeconds = 20,
   onNext,
 }: PhotoStepProps) {
