@@ -16,8 +16,12 @@ import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { formatFrameDate } from "../../../shared/lib/date";
 import { selectFrame } from "../api/printApi";
+import { isApiError } from "../../../shared/lib/apiError";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
+
+/** BE `PrintJobErrorCode.FRAME_ALREADY_SELECTED`의 코드. */
+const FRAME_ALREADY_SELECTED_CODE = "PRINT400_2";
 
 export interface FrameStepData {
   frameId: FrameId;
@@ -77,10 +81,15 @@ export function FrameStep({
       });
     } catch (err) {
       console.error("프레임 선택 저장 실패:", err);
-      hasSubmittedRef.current = false;
-      setIsSubmitting(false);
-      setSubmitError("프레임 선택 저장에 실패했습니다. 다시 시도해주세요.");
-      return;
+
+      // 프레임 저장은 단계를 넘기지 않아 상태 조회로 알 수 없다. 이전 요청의 응답만 끊긴 경우
+      // 다시 보내면 이미 선택됐다는 에러가 오므로, 이때는 그대로 진행한다.
+      if (!isApiError(err) || err.code !== FRAME_ALREADY_SELECTED_CODE) {
+        hasSubmittedRef.current = false;
+        setIsSubmitting(false);
+        setSubmitError("프레임 선택 저장에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
     }
 
     onNext?.({

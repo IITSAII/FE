@@ -5,6 +5,10 @@ import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { selectPhotos } from "../api/photoSelectionApi";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import { getPhotos, uploadPhoto } from "../../photo/api/photoApi";
+import {
+  getSessionStatus,
+  hasPassedStep,
+} from "../../payment/api/paymentApi";
 import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
 import { withRetry } from "../../../shared/lib/retry";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
@@ -110,6 +114,8 @@ export function PhotoSelectionStep({
     setIsSubmitting(true);
     setSubmitError(null);
 
+    let submittedPhotos: CapturedPhoto[] | null = null;
+
     try {
       // 촬영 중 업로드에 실패해 photoId가 없는 사진이 있으면 여기서 보정한다.
       // (6장이 모두 업로드돼야 서버가 SELECT 단계로 넘어가므로, 보정 없이는 선택 저장이 항상 실패한다.)
@@ -141,10 +147,21 @@ export function PhotoSelectionStep({
           "일부 사진의 photoId가 없어 선택을 저장할 수 없습니다.",
         );
       }
+      submittedPhotos = selectedPhotos;
       await selectPhotos(sessionId, photoIds);
       onNext?.({ selectedPhotos });
     } catch (err) {
       console.error("사진 선택 저장 실패:", err);
+
+      // 응답만 끊기고 서버에는 저장된 경우 다시 저장해도 실패하므로, 단계를 확인해 그대로 진행한다.
+      if (submittedPhotos) {
+        const latest = await getSessionStatus(sessionId).catch(() => null);
+        if (latest && hasPassedStep(latest.currentStep, "SELECT")) {
+          onNext?.({ selectedPhotos: submittedPhotos });
+          return;
+        }
+      }
+
       hasSubmittedRef.current = false;
       setIsSubmitting(false);
       setSubmitError("사진 선택 저장에 실패했습니다. 다시 시도해주세요.");

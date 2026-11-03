@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export interface UseCountdownOptions {
   /** 서버 기준 만료 시각(ISO 문자열). 주어지면 이 값을 기준으로 잔여 초를 계산한다. */
@@ -33,7 +33,10 @@ export function useCountdown({
 }: UseCountdownOptions) {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+  // 커밋 직후 타이머 tick이 이전 콜백을 부르지 않도록 layout effect에서 맞춘다.
+  useLayoutEffect(() => {
+    onExpireRef.current = onExpire;
+  });
   // 이미 onExpire를 호출한 targetMs를 기억해, enabled가 꺼졌다 다시 켜져도(예: 제출 실패 후
   // 재시도 가능 상태로 복귀) 같은 만료 시각에 대해 onExpire가 중복 호출되지 않도록 한다.
   const firedTargetMsRef = useRef<number | null>(null);
