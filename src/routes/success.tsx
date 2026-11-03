@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { isApiError } from "../shared/lib/apiError";
+import { isRetryableError, withRetry } from "../shared/lib/retry";
 import {
   confirmPayment,
   getSessionStatus,
@@ -12,6 +13,18 @@ export const Route = createFileRoute("/success")({
 
 /** 결제 실패 후 재진입 시 결제 화면에서 실패 모달을 띄우기 위한 세션 플래그. */
 const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
+
+/**
+ * 승인 결과를 알 수 없을 때 다시 요청하는 횟수와 간격(ms). 서버는 같은 세션의 승인을 멱등하게
+ * 처리하고 토스에도 orderId를 Idempotency-Key로 보내므로, 다시 요청해도 이중 승인되지 않는다.
+ */
+const CONFIRM_RETRIES = 3;
+const CONFIRM_RETRY_DELAY_MS = 2000;
+
+/** 서버에서 승인이 진행 중이거나 이미 끝났을 수 있어, 실패로 단정하면 안 되는 에러인지 판단한다. */
+function isUncertainConfirmError(error: unknown): boolean {
+  return isRetryableError(error) || (isApiError(error) && error.status === 409);
+}
 
 function SuccessPage() {
   const navigate = useNavigate();
@@ -48,10 +61,18 @@ function SuccessPage() {
       };
 
       try {
-        const result = await confirmPayment(
-          sessionId,
-          { paymentKey, amount: parsedAmount },
-          controller.signal,
+        const result = await withRetry(
+          () =>
+            confirmPayment(
+              sessionId,
+              { paymentKey, amount: parsedAmount },
+              controller.signal,
+            ),
+          {
+            retries: CONFIRM_RETRIES,
+            delayMs: CONFIRM_RETRY_DELAY_MS,
+            shouldRetry: isUncertainConfirmError,
+          },
         );
 
         if (result.status === "PAID") {
