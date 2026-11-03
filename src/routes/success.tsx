@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "../shared/ui/Button/Button";
 import { isApiError } from "../shared/lib/apiError";
 import { isRetryableError, withRetry } from "../shared/lib/retry";
 import {
@@ -28,6 +29,8 @@ function isUncertainConfirmError(error: unknown): boolean {
 
 function SuccessPage() {
   const navigate = useNavigate();
+  const [isUnresolved, setIsUnresolved] = useState(false);
+  const [confirmAttempt, setConfirmAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,15 +91,24 @@ function SuccessPage() {
 
         // 승인 응답이 타임아웃으로 끊겼거나, 이미 승인된 세션에 재요청해 400(INVALID_STEP)을 받은 경우에도
         // 서버에서는 결제가 완료됐을 수 있다. 실패로 처리하기 전에 세션 상태를 다시 확인한다.
+        let isSessionExpired = false;
         try {
           const status = await getSessionStatus(sessionId, controller.signal);
           if (status.status === "PAID") {
             proceedToRelation();
             return;
           }
+          isSessionExpired = status.status === "EXPIRED";
         } catch (statusErr) {
           if (isApiError(statusErr) && statusErr.code === "CANCELED") return;
           console.error("결제 상태 재확인 실패:", statusErr);
+        }
+
+        // 결과를 끝내 알 수 없으면 새 세션으로 재결제하게 두지 않는다. 첫 결제가 서버에서 승인됐다면
+        // 이중 청구되고, 이 승인은 세션이 만료된 경우에만 자동 취소되기 때문이다.
+        if (isUncertainConfirmError(err) && !isSessionExpired) {
+          setIsUnresolved(true);
+          return;
         }
 
         returnToPaymentWithFailure();
@@ -106,8 +118,48 @@ function SuccessPage() {
     confirmAndProceed();
 
     return () => controller.abort();
-  }, [navigate]);
+  }, [navigate, confirmAttempt]);
 
-  // 결제 승인 처리가 끝날 때까지 짧게 대기하는 동안에도 별도의 성공 화면은 노출하지 않는다.
-  return <div className="min-h-screen bg-ipad-background" />;
+  const handleRetryConfirm = () => {
+    setIsUnresolved(false);
+    setConfirmAttempt((attempt) => attempt + 1);
+  };
+
+  const handleResetToIntro = () => {
+    sessionStorage.removeItem("payment_session_id");
+    sessionStorage.removeItem("payment_confirmed_session_id");
+    sessionStorage.removeItem("payment_quantity");
+    sessionStorage.removeItem(PAYMENT_FAILED_FLAG_KEY);
+    navigate({ to: "/", replace: true });
+  };
+
+  return (
+    <div className="min-h-screen bg-ipad-background font-primary flex flex-col items-center justify-center gap-2 px-6 text-center">
+      {isUnresolved ? (
+        <>
+          <h2 className="text-ipad-heading-2-medium text-black">
+            결제 확인이 지연되고 있어요
+          </h2>
+          <p className="text-ipad-body-1-light text-gray-600">
+            다시 결제하지 마시고 직원을 불러주세요.
+          </p>
+          <p className="text-ipad-body-1-light text-gray-600">
+            주문번호 {new URLSearchParams(window.location.search).get("orderId")}
+          </p>
+          <div className="flex items-center gap-3 pt-2">
+            <Button variant="primary" size="inline" onClick={handleRetryConfirm}>
+              다시 확인
+            </Button>
+            <Button variant="gray" size="inline" onClick={handleResetToIntro}>
+              처음으로
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p className="text-ipad-body-1-light text-gray-600">
+          결제를 확인하고 있어요.
+        </p>
+      )}
+    </div>
+  );
 }
