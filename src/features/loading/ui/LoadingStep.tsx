@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  PhotoFrame,
-  type PhotoFrameVariant,
-  type PhotoFrameTheme,
-  type PhotoFilter,
+import type {
+  PhotoFrameTheme,
+  PhotoFilter,
 } from "../../../shared/ui/PhotoFrame/PhotoFrame";
-import { JobokFrame } from "../../../shared/ui/PhotoFrame/JobokFrame";
+import { FrameRenderer } from "../../../shared/ui/PhotoFrame/FrameRenderer";
+import {
+  DEFAULT_FRAME_ID,
+  type FrameId,
+} from "../../../shared/ui/PhotoFrame/frames";
 import { QrCode } from "../../../shared/ui/QrCode/QrCode";
 import { Button } from "../../../shared/ui/Button/Button";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
@@ -13,7 +15,6 @@ import { exportFrameImage } from "../../frame/lib/exportFrameImage";
 import { uploadFinalImage } from "../../frame/api/printApi";
 import { getSessionStatus } from "../../payment/api/paymentApi";
 import { withRetry } from "../../../shared/lib/retry";
-import type { FrameDesign } from "../../frame/ui/FrameStep";
 import {
   getAssignedPartner,
   type AssignedPartner,
@@ -61,8 +62,7 @@ export interface LoadingStepProps {
   sessionId: string;
   photos?: string[];
   relationshipTitle?: string | null;
-  design?: FrameDesign;
-  variant?: PhotoFrameVariant;
+  frameId?: FrameId;
   theme?: PhotoFrameTheme;
   filter?: PhotoFilter;
   date: string;
@@ -96,8 +96,7 @@ export function LoadingStep({
   sessionId,
   photos = [],
   relationshipTitle,
-  design = "default",
-  variant = "dark",
+  frameId = DEFAULT_FRAME_ID,
   theme = "pichimothan",
   filter = "default",
   date,
@@ -293,28 +292,18 @@ export function LoadingStep({
             clientWidth/clientHeight로 측정한다. 이 노드는 위 부모(w-0 h-0)의
             containing block 안에서 width:auto인 일반 block이라 clientWidth가
             0으로 계산되어 캔버스가 0×0으로 생성되고(toBlob이 null 반환) 캡처가
-            항상 실패했다. w-fit h-fit으로 실제 자식(PhotoFrame/JobokFrame)
+            항상 실패했다. w-fit h-fit으로 실제 자식(PhotoFrame/SvgFrame)
             크기에 맞춰 스스로 크기를 갖도록 해 이 문제를 막는다. */}
         <div ref={captureNodeRef} className="w-fit h-fit">
-          {design === "jobok" ? (
-            <JobokFrame
-              variant={variant}
-              photos={photos}
-              date={date}
-              qrCodeUrl={qrCodeUrl}
-              filter={filter}
-            />
-          ) : (
-            <PhotoFrame
-              variant={variant}
-              theme={frameTheme}
-              photos={photos}
-              relationship={relationshipTitle || "Friend"}
-              date={date}
-              qrCodeUrl={qrCodeUrl}
-              filter={filter}
-            />
-          )}
+          <FrameRenderer
+            frameId={frameId}
+            theme={frameTheme}
+            photos={photos}
+            relationship={relationshipTitle || "Friend"}
+            date={date}
+            qrCodeUrl={qrCodeUrl}
+            filter={filter}
+          />
         </div>
       </div>
 
