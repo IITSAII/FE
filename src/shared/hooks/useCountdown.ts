@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export interface UseCountdownOptions {
   /** 서버 기준 만료 시각(ISO 문자열). 주어지면 이 값을 기준으로 잔여 초를 계산한다. */
@@ -33,8 +33,8 @@ export function useCountdown({
 }: UseCountdownOptions) {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const onExpireRef = useRef(onExpire);
-  // 아래 카운트다운 effect의 tick보다 먼저 실행되도록 그보다 앞에 둔다.
-  useEffect(() => {
+  // 커밋 직후 타이머 tick이 이전 콜백을 부르지 않도록 layout effect에서 맞춘다.
+  useLayoutEffect(() => {
     onExpireRef.current = onExpire;
   });
   // 이미 onExpire를 호출한 targetMs를 기억해, enabled가 꺼졌다 다시 켜져도(예: 제출 실패 후
