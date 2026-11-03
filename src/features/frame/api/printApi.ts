@@ -1,9 +1,10 @@
 import { api } from "../../../shared/lib/axios";
+import type { FrameId } from "../../../shared/ui/PhotoFrame/frames";
 
 /** 최종 이미지는 3배 해상도 PNG(수 MB)라 기본 타임아웃(10초)으로는 업로드 도중 끊길 수 있다. */
 const FINAL_IMAGE_UPLOAD_TIMEOUT_MS = 60_000;
 
-export type FrameType = "DARK" | "LIGHT" | "JobokPink" | "JobokDark";
+export type FrameType = FrameId;
 export type PrintJobStatus = "QUEUED" | "PRINTING" | "DONE" | "FAILED";
 
 export interface FrameSelectParams {

@@ -1,29 +1,26 @@
 import { useMemo, useRef, useState } from "react";
-import {
-  PhotoFrame,
-  type PhotoFrameVariant,
-  type PhotoFrameTheme,
-  type PhotoFilter,
+import type {
+  PhotoFrameTheme,
+  PhotoFilter,
 } from "../../../shared/ui/PhotoFrame/PhotoFrame";
-import { JobokFrame } from "../../../shared/ui/PhotoFrame/JobokFrame";
-import Logo from "../../../shared/assets/icons/Logo/Logo.svg?react";
-import JobokColorIcon from "../../../shared/assets/icons/Logo/JobokColorIcon.svg?react";
-import JobokMonoIcon from "../../../shared/assets/icons/Logo/JobokMonoIcon.svg?react";
+import { FrameRenderer } from "../../../shared/ui/PhotoFrame/FrameRenderer";
+import {
+  DEFAULT_FRAME_ID,
+  FRAME_LIST,
+  type FrameId,
+} from "../../../shared/ui/PhotoFrame/frames";
 import SlashIcon from "../../../shared/assets/icons/SlashIcon.svg?react";
 import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { formatFrameDate } from "../../../shared/lib/date";
-import { selectFrame, type FrameType } from "../api/printApi";
+import { selectFrame } from "../api/printApi";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
 
-export type FrameDesign = "default" | "jobok";
-
 export interface FrameStepData {
-  design: FrameDesign;
-  variant: PhotoFrameVariant;
+  frameId: FrameId;
   theme: PhotoFrameTheme;
   filter: PhotoFilter;
   date: string;
@@ -44,21 +41,10 @@ export const THEME_CATEGORIES = [
   { id: "banjjak", name: "반짝" },
 ];
 
-/** (디자인, 색상) 조합을 백엔드 FrameType 값으로 변환한다. */
-function toFrameType(
-  design: FrameDesign,
-  variant: PhotoFrameVariant,
-): FrameType {
-  if (design === "jobok") {
-    return variant === "dark" ? "JobokDark" : "JobokPink";
-  }
-  return variant === "dark" ? "DARK" : "LIGHT";
-}
-
 /**
  * 프레임 선택 플로우 단계 컴포넌트 (FrameStep)
  * - 이전 단계에서 선택한 4장의 사진을 받아 네컷 사진 프레임을 구성하고,
- * - 다크/라이트 색상 및 4가지 프레임 테마(피치못한, 마주하다, 오버눅, 반짝)를 선택합니다.
+ * - 프레임 설정(frames.ts)에 정의된 프레임과 필터를 선택합니다.
  */
 export function FrameStep({
   sessionId,
@@ -66,8 +52,7 @@ export function FrameStep({
   relationshipTitle,
   onNext,
 }: FrameStepProps) {
-  const [design, setDesign] = useState<FrameDesign>("default");
-  const [variant, setVariant] = useState<PhotoFrameVariant>("dark");
+  const [frameId, setFrameId] = useState<FrameId>(DEFAULT_FRAME_ID);
   const [selectedThemeId] = useState<PhotoFrameTheme>("pichimothan");
   const [filter, setFilter] = useState<PhotoFilter>("default");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +71,7 @@ export function FrameStep({
 
     try {
       await selectFrame(sessionId, {
-        frameType: toFrameType(design, variant),
+        frameType: frameId,
         filterBw: filter === "grayscale",
         filterBrightness: 0,
       });
@@ -99,8 +84,7 @@ export function FrameStep({
     }
 
     onNext?.({
-      design,
-      variant,
+      frameId,
       theme: selectedThemeId,
       filter,
       date: frameDate,
@@ -112,7 +96,7 @@ export function FrameStep({
   };
 
   const handleExpire = () => {
-    // 만료 시 마지막으로 선택해둔(또는 기본값인) variant/theme/filter 그대로 진행한다.
+    // 만료 시 마지막으로 선택해둔(또는 기본값인) frameId/theme/filter 그대로 진행한다.
     proceed();
   };
 
@@ -150,101 +134,39 @@ export function FrameStep({
           {/* 좌측: 실시간 PhotoFrame 축소 미리보기 */}
           <div className="w-113 h-172.75 bg-gray-900 flex items-center justify-center overflow-hidden shrink-0">
             <div className="origin-center shrink-0 scale-[0.3467]">
-              {design === "jobok" ? (
-                <JobokFrame
-                  variant={variant}
-                  photos={photoUrls}
-                  date={frameDate}
-                  qrCodeUrl={qrCodeUrl}
-                  filter={filter}
-                />
-              ) : (
-                <PhotoFrame
-                  variant={variant}
-                  theme={selectedThemeId}
-                  photos={photoUrls}
-                  relationship={relationshipTitle || "Friend"}
-                  date={frameDate}
-                  qrCodeUrl={qrCodeUrl}
-                  filter={filter}
-                />
-              )}
+              <FrameRenderer
+                frameId={frameId}
+                theme={selectedThemeId}
+                photos={photoUrls}
+                relationship={relationshipTitle || "Friend"}
+                date={frameDate}
+                qrCodeUrl={qrCodeUrl}
+                filter={filter}
+              />
             </div>
           </div>
 
           {/* 우측: 프레임 디자인/색상(다크/라이트) 및 브랜드 테마 선택 컨트롤 */}
           <div className="w-66 flex flex-col gap-16 shrink-0 pt-8.5">
-            {/* 1. 프레임 색상 선택 (Dark / Light) */}
+            {/* 1. 프레임 선택 */}
             <div className="flex flex-col gap-6">
               <h3 className="text-ipad-heading-3-medium text-black">프레임</h3>
               <div className="flex flex-wrap items-center gap-3">
-                {/* 다크 프레임 선택 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDesign("default");
-                    setVariant("dark");
-                  }}
-                  className={`flex items-center justify-center w-20 h-20 rounded-[4px] bg-frame-dark border-2 box-border transition-all cursor-pointer ${
-                    design === "default" && variant === "dark"
-                      ? "border-green-500"
-                      : "border-transparent opacity-40"
-                  }`}
-                  aria-label="다크 프레임 선택"
-                >
-                  <Logo className="w-14.75 h-6 text-ipad-background" />
-                </button>
-
-                {/* 라이트 프레임 선택 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDesign("default");
-                    setVariant("light");
-                  }}
-                  className={`flex items-center justify-center w-20 h-20 rounded-[4px] bg-frame-light border-2 box-border transition-all cursor-pointer ${
-                    design === "default" && variant === "light"
-                      ? "border-green-500"
-                      : "border-gray-400 opacity-40"
-                  }`}
-                  aria-label="라이트 프레임 선택"
-                >
-                  <Logo className="w-14.75 h-6 text-green-500" />
-                </button>
-
-                {/* 조복 컬러 프레임 선택 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDesign("jobok");
-                    setVariant("light");
-                  }}
-                  className={`flex items-center justify-center w-20 h-20 rounded-[4px] bg-white border-2 box-border transition-all cursor-pointer ${
-                    design === "jobok" && variant === "light"
-                      ? "border-green-500"
-                      : "border-gray-400 opacity-40"
-                  }`}
-                  aria-label="조복 컬러 프레임 선택"
-                >
-                  <JobokColorIcon className="h-14 w-auto" />
-                </button>
-
-                {/* 조복 흑백 프레임 선택 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDesign("jobok");
-                    setVariant("dark");
-                  }}
-                  className={`flex items-center justify-center w-20 h-20 rounded-[4px] bg-white border-2 box-border transition-all cursor-pointer ${
-                    design === "jobok" && variant === "dark"
-                      ? "border-green-500"
-                      : "border-gray-400 opacity-40"
-                  }`}
-                  aria-label="조복 흑백 프레임 선택"
-                >
-                  <JobokMonoIcon className="h-14 w-auto" />
-                </button>
+                {FRAME_LIST.map(({ id, label, thumbnail }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setFrameId(id)}
+                    className={`flex items-center justify-center w-20 h-20 rounded-[4px] ${thumbnail.buttonClassName} border-2 box-border transition-all cursor-pointer ${
+                      frameId === id
+                        ? "border-green-500"
+                        : `${thumbnail.unselectedBorderClassName} opacity-40`
+                    }`}
+                    aria-label={`${label} 프레임 선택`}
+                  >
+                    <thumbnail.Icon className={thumbnail.iconClassName} />
+                  </button>
+                ))}
               </div>
             </div>
 

@@ -263,8 +263,7 @@ function SnapFlowPage() {
             (photo) => photo.dataUrl,
           )}
           relationshipTitle={relationData?.selectedRelationTitle}
-          design={frameData?.design}
-          variant={frameData?.variant}
+          frameId={frameData?.frameId}
           theme={frameData?.theme}
           filter={frameData?.filter}
           date={frameData?.date ?? formatFrameDate()}
