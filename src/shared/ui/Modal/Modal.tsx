@@ -58,6 +58,8 @@ export interface ModalProps {
   icon?: React.ReactNode;
   cancelText?: string;
   confirmText?: string;
+  /** true면 확인 버튼을 비활성화한다. */
+  confirmDisabled?: boolean;
   onCancel?: () => void;
   onConfirm?: () => void;
   closeOnBackdropClick?: boolean;
@@ -77,6 +79,7 @@ export function Modal({
   icon = <ExclamationIcon className="w-6 h-6 text-white" />,
   cancelText,
   confirmText,
+  confirmDisabled = false,
   onCancel,
   onConfirm,
   closeOnBackdropClick = true,
@@ -268,6 +271,7 @@ export function Modal({
                 size="inline"
                 className="flex-1 h-10.5 px-0 justify-center"
                 onClick={handleConfirm}
+                disabled={confirmDisabled}
               >
                 {confirmText}
               </Button>
