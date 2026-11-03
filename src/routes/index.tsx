@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { IntroStep } from "../features/intro/ui/IntroStep";
 import {
@@ -21,7 +21,11 @@ import {
 } from "../features/photo-selection/ui/PhotoSelectionStep";
 import { FrameStep, type FrameStepData } from "../features/frame/ui/FrameStep";
 import { LoadingStep } from "../features/loading/ui/LoadingStep";
+import { Button } from "../shared/ui/Button/Button";
+import { getSessionStatus } from "../features/payment/api/paymentApi";
+import { isApiError } from "../shared/lib/apiError";
 import { formatFrameDate } from "../shared/lib/date";
+import { isPostPaymentFlow } from "../shared/lib/flow";
 
 export type FlowStep =
   | "intro"
@@ -104,14 +108,7 @@ function SnapFlowPage() {
     readStoredQuantity,
   );
 
-  const postPaymentSteps: FlowStep[] = [
-    "relation",
-    "photo",
-    "select-photo",
-    "frame",
-    "loading",
-  ];
-  const isPostPaymentStep = postPaymentSteps.includes(requestedStep);
+  const isPostPaymentStep = isPostPaymentFlow(requestedStep);
   // 수량 정보 없이 결제 단계로 진입하면 임의 기본값으로 결제하지 않도록 수량 선택부터 다시 진행한다.
   const isPaymentStepWithoutQuantity =
     requestedStep === "payment" && quantityData == null;
@@ -135,6 +132,10 @@ function SnapFlowPage() {
   const [selectedPhotoData, setSelectedPhotoData] =
     useState<PhotoSelectionStepData | null>(null);
   const [frameData, setFrameData] = useState<FrameStepData | null>(null);
+  // 사진과 단계 데이터는 메모리에만 있다. 새로고침 등으로 다시 마운트되면 서버 단계를 먼저 확인한다.
+  const [flowRecovery, setFlowRecovery] = useState<
+    "checking" | "unrecoverable" | null
+  >(initialStep !== "quantity" && isPostPaymentStep ? "checking" : null);
 
   const handleIntroNext = () => {
     setCurrentStep("quantity");
@@ -189,6 +190,40 @@ function SnapFlowPage() {
     navigate({ to: "/", replace: true });
   };
 
+  useEffect(() => {
+    if (flowRecovery !== "checking" || !sessionId) return;
+
+    const controller = new AbortController();
+
+    getSessionStatus(sessionId, controller.signal)
+      .then(({ currentStep: serverStep }) => {
+        if (serverStep === "RELATIONSHIP") {
+          setCurrentStep("relation");
+          setFlowRecovery(null);
+        } else if (
+          serverStep === "CAPTURE" ||
+          serverStep === "SELECT" ||
+          serverStep === "FRAME"
+        ) {
+          setFlowRecovery("unrecoverable");
+        } else {
+          // PRINT/DONE은 이미 인쇄로 넘어간 세션이고, 그 전 단계는 결제가 확인되지 않은 세션이다.
+          // 어느 쪽이든 이어갈 촬영이 없으므로 처음으로 돌아간다.
+          setFlowRecovery(null);
+          handleResetFlow();
+        }
+      })
+      .catch((err) => {
+        if (isApiError(err) && err.code === "CANCELED") return;
+        // 확인 자체가 실패하면 막지 않는다. 다음 요청이 실패하면 각 단계에서 안내한다.
+        console.error("세션 단계 확인 실패:", err);
+        setCurrentStep("relation");
+        setFlowRecovery(null);
+      });
+
+    return () => controller.abort();
+  }, []);
+
   const handleBackToQuantity = () => {
     setCurrentStep("quantity");
   };
@@ -208,6 +243,38 @@ function SnapFlowPage() {
   const handleBackToSelection = () => {
     setCurrentStep("select-photo");
   };
+
+  if (flowRecovery === "checking") {
+    return <div className="w-full min-h-screen bg-ipad-background" />;
+  }
+
+  if (flowRecovery === "unrecoverable") {
+    return (
+      <div className="w-full min-h-screen bg-ipad-background font-primary flex flex-col items-center justify-center gap-2 px-6 text-center">
+        <h2 className="text-ipad-heading-2-medium text-black">
+          촬영을 이어갈 수 없어요
+        </h2>
+        <p className="text-ipad-body-1-light text-gray-600">
+          결제는 완료되어 있으니 직원을 불러주세요.
+        </p>
+        <p className="text-ipad-body-1-light text-gray-600">
+          주문번호 {sessionId}
+        </p>
+        <div className="pt-2">
+          <Button
+            variant="gray"
+            size="inline"
+            onClick={() => {
+              setFlowRecovery(null);
+              handleResetFlow();
+            }}
+          >
+            처음으로
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen">
