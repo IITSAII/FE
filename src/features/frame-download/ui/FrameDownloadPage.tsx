@@ -65,10 +65,10 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
             return;
           }
 
-          // 촬영 후 24시간이 지나 사진 열람 기한이 만료된 경우(410 PHOTO_VIEW_EXPIRED)를
+          // 촬영 후 24시간이 지나 사진 열람 기한이 만료된 경우(410 PRINT410_1)를
           // 그 외 실패와 구분해서 보여준다.
           const message =
-            isApiError(err) && err.code === "PHOTO_VIEW_EXPIRED"
+            isApiError(err) && err.code === "PRINT410_1"
               ? "사진 열람 기한(촬영 후 24시간)이 지나 더 이상 볼 수 없어요."
               : isApiError(err) && err.code === "PRINT400_5"
                 ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
