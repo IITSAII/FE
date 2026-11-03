@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { IntroStep } from "../features/intro/ui/IntroStep";
 import {
   QuantityStep,
@@ -75,6 +75,7 @@ function readStoredQuantity(): QuantityStepData | null {
 }
 
 function SnapFlowPage() {
+  const navigate = useNavigate();
   const searchParams =
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search)
@@ -114,8 +115,9 @@ function SnapFlowPage() {
   // 수량 정보 없이 결제 단계로 진입하면 임의 기본값으로 결제하지 않도록 수량 선택부터 다시 진행한다.
   const isPaymentStepWithoutQuantity =
     requestedStep === "payment" && quantityData == null;
+  // 결제 후 단계는 수량 값이 있어도 결제가 확인된 세션만 진입할 수 있다.
   const initialStep: FlowStep =
-    (isPostPaymentStep && quantityData == null && !hasValidatedPaymentSession) ||
+    (isPostPaymentStep && !hasValidatedPaymentSession) ||
     isPaymentStepWithoutQuantity
       ? "quantity"
       : requestedStep;
@@ -183,6 +185,8 @@ function SnapFlowPage() {
     setSelectedPhotoData(null);
     setFrameData(null);
     setCurrentStep("intro");
+    // 이전 사용자의 ?step= 값이 남아 있으면 다음 사용자가 새로고침할 때 그 단계로 진입한다.
+    navigate({ to: "/", replace: true });
   };
 
   const handleBackToQuantity = () => {
@@ -261,8 +265,7 @@ function SnapFlowPage() {
             (photo) => photo.dataUrl,
           )}
           relationshipTitle={relationData?.selectedRelationTitle}
-          design={frameData?.design}
-          variant={frameData?.variant}
+          frameId={frameData?.frameId}
           theme={frameData?.theme}
           filter={frameData?.filter}
           date={frameData?.date ?? formatFrameDate()}

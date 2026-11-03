@@ -8,8 +8,7 @@ import { CategoryTabs } from "../shared/ui/CategoryTabs/CategoryTabs";
 import { CategoryTab } from "../shared/ui/CategoryTabs/CategoryTab";
 import { IconButton } from "../shared/ui/IconButton/IconButton";
 import { Modal } from "../shared/ui/Modal/Modal";
-import { PhotoFrame } from "../shared/ui/PhotoFrame/PhotoFrame";
-import { JobokFrame } from "../shared/ui/PhotoFrame/JobokFrame";
+import { FrameRenderer } from "../shared/ui/PhotoFrame/FrameRenderer";
 import { useModal } from "../shared/hooks/useModal";
 import PlusIcon from "../shared/assets/icons/PlusIcon.svg?react";
 import MinusIcon from "../shared/assets/icons/MinusIcon.svg?react";
@@ -583,10 +582,10 @@ function SharedUITestPage() {
           />
         </section>
 
-        {/* 6. PhotoFrame (모든 테마 & 다크/라이트 변형) */}
+        {/* 6. 로고 프레임 (모든 테마 & 다크/라이트 변형) */}
         <section className="bg-white p-6 rounded-xl border border-gray-200 space-y-6">
           <h2 className="text-heading-1-semibold text-gray-900 border-b border-gray-100 pb-2">
-            6. PhotoFrame (사진 프레임 컴포넌트: 모든 테마 & 변형)
+            6. 로고 프레임 (PhotoFrame: 모든 테마 & 변형)
           </h2>
 
           {/* 피치못한 테마 */}
@@ -596,11 +595,11 @@ function SharedUITestPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="dark" theme="pichimothan" />
+                <FrameRenderer frameId="DARK" theme="pichimothan" />
                 <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="light" theme="pichimothan" />
+                <FrameRenderer frameId="LIGHT" theme="pichimothan" />
                 <span className="text-xs text-gray-500 font-medium">Light Variant</span>
               </div>
             </div>
@@ -613,11 +612,11 @@ function SharedUITestPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="dark" theme="majuhada" />
+                <FrameRenderer frameId="DARK" theme="majuhada" />
                 <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="light" theme="majuhada" />
+                <FrameRenderer frameId="LIGHT" theme="majuhada" />
                 <span className="text-xs text-gray-500 font-medium">Light Variant</span>
               </div>
             </div>
@@ -630,11 +629,11 @@ function SharedUITestPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="dark" theme="overnook" />
+                <FrameRenderer frameId="DARK" theme="overnook" />
                 <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="light" theme="overnook" />
+                <FrameRenderer frameId="LIGHT" theme="overnook" />
                 <span className="text-xs text-gray-500 font-medium">Light Variant</span>
               </div>
             </div>
@@ -647,44 +646,44 @@ function SharedUITestPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="dark" theme="banjjak" />
+                <FrameRenderer frameId="DARK" theme="banjjak" />
                 <span className="text-xs text-gray-500 font-medium">Dark Variant</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <PhotoFrame variant="light" theme="banjjak" />
+                <FrameRenderer frameId="LIGHT" theme="banjjak" />
                 <span className="text-xs text-gray-500 font-medium">Light Variant</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 7. JobokFrame (조복 SVG 사진 프레임: 컬러 & 흑백) */}
+        {/* 7. 조복 프레임 (조복 SVG 사진 프레임: 컬러 & 흑백) */}
         <section className="bg-white p-6 rounded-xl border border-gray-200 space-y-6">
           <h2 className="text-heading-1-semibold text-gray-900 border-b border-gray-100 pb-2">
-            7. JobokFrame (조복 SVG 사진 프레임: 컬러 & 흑백)
+            7. 조복 프레임 (조복 SVG 사진 프레임: 컬러 & 흑백)
           </h2>
           <div className="flex flex-wrap items-center gap-6 bg-iphone-background p-6 rounded-xl justify-center sm:justify-start">
             <div className="flex flex-col items-center gap-2">
-              <JobokFrame
-                variant="light"
+              <FrameRenderer
+                frameId="JobokPink"
                 photos={SAMPLE_PHOTOS}
                 qrCodeUrl="https://example.com"
                 date="2026.05.16"
               />
               <span className="text-xs text-gray-500 font-medium">
-                Color (variant=light)
+                Color (JobokPink)
               </span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <JobokFrame
-                variant="dark"
+              <FrameRenderer
+                frameId="JobokDark"
                 photos={SAMPLE_PHOTOS}
                 qrCodeUrl="https://example.com"
                 date="2026.05.16"
                 filter="grayscale"
               />
               <span className="text-xs text-gray-500 font-medium">
-                Mono (variant=dark)
+                Mono (JobokDark)
               </span>
             </div>
           </div>
