@@ -364,8 +364,8 @@ export function PaymentStep({
         description={
           "결제 승인이 계속 실패한다면,\n인스타그램 또는 고객센터로 문의해 주세요."
         }
-        confirmText="결제 다시 시도하기"
         // /fail에서 돌아온 직후에는 위젯이 준비되기 전이라 눌러도 모달만 닫힌다.
+        confirmText={isLoading ? "결제 정보 준비 중..." : "결제 다시 시도하기"}
         confirmDisabled={isLoading}
         onConfirm={handleRetryPayment}
       />
