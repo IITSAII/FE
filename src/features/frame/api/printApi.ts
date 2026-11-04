@@ -5,10 +5,12 @@ import type { FrameId } from "../../../shared/ui/PhotoFrame/frames";
 const FINAL_IMAGE_UPLOAD_TIMEOUT_MS = 60_000;
 
 export type FrameType = FrameId;
+export type FilterType = "DEFAULT" | "GRAYSCALE" | "VINTAGE";
 export type PrintJobStatus = "QUEUED" | "PRINTING" | "DONE" | "FAILED";
 
 export interface FrameSelectParams {
   frameType: FrameType;
+  filterType: FilterType;
   filterBw: boolean;
   filterBrightness: number;
 }
