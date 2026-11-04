@@ -6,7 +6,7 @@ import jobokColorUrl from "../../assets/frames/jobok_color.svg";
 import jobokMonoUrl from "../../assets/frames/jobok_mono.svg";
 
 /** 프레임 식별자. 백엔드 FrameType 값과 같다. */
-export type FrameId = "DARK" | "LIGHT" | "JobokPink" | "JobokDark";
+export type FrameId = "DARK" | "LIGHT" | "IVORY" | "JobokPink" | "JobokDark";
 
 /** PhotoFrame(코드로 그리는 프레임)의 색상 묶음. */
 export interface PhotoFramePalette {
@@ -104,6 +104,24 @@ export const FRAME_CONFIGS: Record<FrameId, FrameConfig> = {
     thumbnail: {
       Icon: Logo,
       iconClassName: "w-14.75 h-6 text-green-500",
+      buttonClassName: "bg-frame-light",
+      unselectedBorderClassName: "border-gray-400",
+    },
+  },
+  IVORY: {
+    id: "IVORY",
+    kind: "logo",
+    label: "아이보리",
+    palette: {
+      rootClassName: "bg-frame-light text-frame-ink",
+      photoSlotClassName: "bg-frame-ink",
+      dividerClassName: "bg-frame-ink",
+      qrDotsColor: "#000000",
+      qrBackgroundColor: "#F9F5ED",
+    },
+    thumbnail: {
+      Icon: Logo,
+      iconClassName: "w-14.75 h-6 text-frame-ink",
       buttonClassName: "bg-frame-light",
       unselectedBorderClassName: "border-gray-400",
     },
