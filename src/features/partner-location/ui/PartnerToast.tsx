@@ -3,6 +3,7 @@ import { getCompanyLocationInfoByPartnerName } from "../../intro-gallery/lib/com
 import { LocationToastCard } from "../../../shared/ui/LocationToastCard/LocationToastCard";
 import type { AssignedPartner } from "../api/partnerApi";
 import { getNaverMapSearchUrl, getPartnerLocationVariant } from "../lib/partnerMatch";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface PartnerToastProps {
   galleryToken: string;
@@ -17,6 +18,13 @@ export interface PartnerToastProps {
 export function PartnerToast({ galleryToken, partner }: PartnerToastProps) {
   const variant = getPartnerLocationVariant(partner.name);
   const companyInfo = getCompanyLocationInfoByPartnerName(partner.name);
+  const handleDirectionsClick = () => {
+    trackEvent("directions_click", {
+      partner: partner.name,
+      source: "assigned_partner",
+      destination: variant === "naver-map" ? "naver_map" : "location_page",
+    });
+  };
   const card = (
     <LocationToastCard
       imageUrl={companyInfo?.image ?? partner.logoUrl}
@@ -34,6 +42,7 @@ export function PartnerToast({ galleryToken, partner }: PartnerToastProps) {
         href={getNaverMapSearchUrl(partner.location)}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleDirectionsClick}
         className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
       >
         {card}
@@ -45,6 +54,7 @@ export function PartnerToast({ galleryToken, partner }: PartnerToastProps) {
     <Link
       to="/intro/$galleryToken/location"
       params={{ galleryToken }}
+      onClick={handleDirectionsClick}
       className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
     >
       {card}

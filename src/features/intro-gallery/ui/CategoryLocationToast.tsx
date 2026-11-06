@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { LocationToastCard } from "../../../shared/ui/LocationToastCard/LocationToastCard";
 import { getNaverMapSearchUrl } from "../../partner-location/lib/partnerMatch";
 import { COMPANY_LOCATION_INFO } from "../lib/companyLocationContent";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface CategoryLocationToastProps {
   /** 현재 선택된 카테고리 탭 id */
@@ -20,6 +21,13 @@ export function CategoryLocationToast({
   const info = COMPANY_LOCATION_INFO[selectedCategoryId];
   if (!info) return null;
 
+  const handleDirectionsClick = () => {
+    trackEvent("directions_click", {
+      partner: info.name,
+      source: "category_tab",
+      destination: info.variant === "naver-map" ? "naver_map" : "location_page",
+    });
+  };
   const card = (
     <LocationToastCard
       imageUrl={info.image}
@@ -35,6 +43,7 @@ export function CategoryLocationToast({
         href={getNaverMapSearchUrl(info.location)}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleDirectionsClick}
         className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
       >
         {card}
@@ -46,6 +55,7 @@ export function CategoryLocationToast({
     <Link
       to="/intro/location/$companyId"
       params={{ companyId: selectedCategoryId }}
+      onClick={handleDirectionsClick}
       className="fixed bottom-5 left-1/2 -translate-x-1/2 w-full max-w-[350px] z-20"
     >
       {card}
