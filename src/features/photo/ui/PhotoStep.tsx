@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MissionCard } from "../../../shared/ui/Card/MissionCard";
+import { Button } from "../../../shared/ui/Button/Button";
 import { uploadPhoto } from "../api/photoApi";
 import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
 import { withRetry } from "../../../shared/lib/retry";
@@ -9,6 +10,7 @@ import {
   DEFAULT_COLOR_CORRECTION,
 } from "../../frame/lib/colorCorrection";
 import { PRINTED_PHOTO_ASPECT_RATIO } from "../../../shared/ui/PhotoFrame/printedPhotoSlot";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface CapturedPhoto {
   photoId: number | null;
@@ -214,6 +216,8 @@ async function preferMainCamera(stream: MediaStream): Promise<MediaStream> {
   }
 }
 
+const CAMERA_ERROR_MESSAGE = "카메라에 연결할 수 없습니다. 직원을 불러주세요.";
+
 /** 프리뷰 위에 그릴 "실제 인화되는 영역" 사각형의 크기(프리뷰 박스 기준 px). */
 interface PrintAreaSize {
   width: number;
@@ -290,8 +294,8 @@ export function PhotoStep({
   selectedRelationId,
   selectedRelationTitle,
   totalPhotosCount = 6,
-  // 컷당 촬영 대기 시간. 서버는 이 값을 API로 내려주지 않고, CAPTURE 단계 전체 타임아웃
-  // (BE SessionService.CAPTURE_STEP_TIMEOUT = 120초 = 20초 × 6컷)만 갖고 있으므로 함께 맞춰야 한다.
+  // 컷당 촬영 대기 시간(20초 × 6컷 = 120초). 서버는 이 값을 API로 내려주지 않는다.
+  // BE CAPTURE_STEP_TIMEOUT은 90초로 더 짧지만, 현재 BE는 촬영 업로드에서 만료를 검사하지 않아 영향이 없다.
   timerDurationSeconds = 20,
   onNext,
 }: PhotoStepProps) {
@@ -299,6 +303,7 @@ export function PhotoStep({
   const [countdown, setCountdown] = useState(timerDurationSeconds);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
   // 촬영 순간 플래시 표시 여부. 카운트다운 숫자가 아니라 실제 capturePhoto() 시점에 켜야
   // 애니메이션과 실제 촬영 시점이 어긋나지 않는다(어긋나면 사용자가 포즈를 더 유지해야 한다).
   const [isFlashing, setIsFlashing] = useState(false);
@@ -363,6 +368,12 @@ export function PhotoStep({
           return;
         }
 
+        preferredStream.getVideoTracks()[0]?.addEventListener("ended", () => {
+          if (!isMounted) return;
+          setCameraError(CAMERA_ERROR_MESSAGE);
+          trackEvent("camera_error", { reason: "track_ended" });
+        });
+
         streamRef.current = preferredStream;
         if (videoRef.current) {
           videoRef.current.srcObject = preferredStream;
@@ -370,9 +381,8 @@ export function PhotoStep({
       } catch (err) {
         if (isMounted) {
           console.warn("카메라 연결 실패 또는 권한 없음:", err);
-          setCameraError(
-            "카메라에 연결할 수 없습니다. 시뮬레이션 모드로 진행됩니다.",
-          );
+          setCameraError(CAMERA_ERROR_MESSAGE);
+          trackEvent("camera_error", { reason: "unavailable" });
         }
       }
     }
@@ -386,7 +396,7 @@ export function PhotoStep({
         streamRef.current = null;
       }
     };
-  }, []);
+  }, [cameraAttempt]);
 
   // 인화 영역 가이드라인 갱신
   // - video 메타데이터가 로드되거나(해상도 확정) 트랙 해상도가 바뀔 때(resize)
@@ -476,38 +486,27 @@ export function PhotoStep({
       }
     }
 
-    // 비디오 미연결 시 가상 캔버스 썸네일 생성
-    if (!dataUrl) {
-      const fallbackCanvas = document.createElement("canvas");
-      fallbackCanvas.width = 585;
-      fallbackCanvas.height = 778;
-      const ctx = fallbackCanvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#30372f";
-        ctx.fillRect(0, 0, 585, 778);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 32px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`Photo ${currentPhotoIndex + 1}`, 585 / 2, 778 / 2);
-        dataUrl = fallbackCanvas.toDataURL("image/png");
-      }
-    }
-
     return dataUrl;
-  }, [currentPhotoIndex]);
+  }, []);
 
   // 모든 사진이 캡처된 후 정확히 한 번만 onNext 호출하는 완료 플래그
   const onNextCalledRef = useRef(false);
 
   // 카운트다운 타이머 및 자동 샷 로직
   useEffect(() => {
-    if (currentPhotoIndex >= totalPhotosCount) {
+    // 카메라가 끊긴 동안에는 컷을 소모하지 않도록 타이머를 멈춘다.
+    if (currentPhotoIndex >= totalPhotosCount || cameraError) {
       return;
     }
 
     if (countdown === 0) {
       const shotNumber = currentPhotoIndex + 1;
       const dataUrl = capturePhoto();
+      if (!dataUrl) {
+        setCameraError(CAMERA_ERROR_MESSAGE);
+        trackEvent("camera_error", { reason: "capture_failed" });
+        return;
+      }
       setIsFlashing(true);
       updateCapturedPhotos((photos) => [
         ...photos,
@@ -551,7 +550,14 @@ export function PhotoStep({
     capturePhoto,
     sessionId,
     updateCapturedPhotos,
+    cameraError,
   ]);
+
+  const handleRetryCamera = () => {
+    setCameraError(null);
+    setCountdown(timerDurationSeconds);
+    setCameraAttempt((attempt) => attempt + 1);
+  };
 
   // 플래시는 켜진 뒤 애니메이션 길이만큼만 유지하고 스스로 꺼진다.
   useEffect(() => {
@@ -667,13 +673,16 @@ export function PhotoStep({
               </div>
             )}
 
-            {/* 카메라 에러 또는 시뮬레이션 알림 */}
+            {/* 카메라 에러 알림 */}
             {cameraError && (
               <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-6 text-center text-white space-y-2">
                 <p className="text-ipad-heading-3-medium">{cameraError}</p>
                 <p className="text-ipad-body-2-light text-gray-300">
-                  타이머에 맞춰 자동으로 촬영 시뮬레이션이 진행됩니다.
+                  촬영이 멈췄어요. 찍은 사진은 그대로 남아 있어요.
                 </p>
+                <Button variant="primary" size="inline" onClick={handleRetryCamera}>
+                  다시 연결
+                </Button>
               </div>
             )}
 

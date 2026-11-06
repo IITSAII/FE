@@ -13,6 +13,7 @@ import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react"
 import { isApiError } from "../../../shared/lib/apiError";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { createSession, getSessionStatus } from "../api/paymentApi";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 /** 결제 실패 후 재진입 시 실패 모달을 자동으로 띄우기 위한 세션 플래그. */
 const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
@@ -53,6 +54,8 @@ export function PaymentStep({
   // 만료되었거나 언마운트되어 더 이상 결제창을 띄우면 안 되는 상태인지 여부.
   // renderPaymentWindow()가 진행 중일 때 만료/이탈이 일어나면, 뒤늦게 열린 결제창을 바로 닫는 데 쓴다.
   const isClosedRef = useRef(false);
+  // 결제창을 여는 동안 다시 눌러 결제창이 겹쳐 열리지 않도록 막는다.
+  const isOpeningPaymentRef = useRef(false);
   const onSessionCreatedRef = useRef(onSessionCreated);
   onSessionCreatedRef.current = onSessionCreated;
 
@@ -74,6 +77,7 @@ export function PaymentStep({
   const resolvedAmount = serverAmount ?? totalPrice;
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "payment" });
     setIsExpired(true);
     setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
     isClosedRef.current = true;
@@ -204,7 +208,18 @@ export function PaymentStep({
   }, [clientKey, personnelCount, totalPrice]);
 
   const handlePayment = async () => {
-    if (!widgets || !sessionId || serverAmount == null || isExpired) return;
+    if (
+      !widgets ||
+      !sessionId ||
+      serverAmount == null ||
+      isExpired ||
+      isOpeningPaymentRef.current
+    ) {
+      return;
+    }
+
+    isOpeningPaymentRef.current = true;
+    trackEvent("payment_start", { quantity: personnelCount });
 
     try {
       const paymentWindow = await widgets.renderPaymentWindow({
@@ -240,6 +255,8 @@ export function PaymentStep({
     } catch (err) {
       console.error("Failed to open payment window:", err);
       openFailureModal();
+    } finally {
+      isOpeningPaymentRef.current = false;
     }
   };
 
@@ -350,7 +367,9 @@ export function PaymentStep({
         description={
           "결제 승인이 계속 실패한다면,\n인스타그램 또는 고객센터로 문의해 주세요."
         }
-        confirmText="결제 다시 시도하기"
+        // /fail에서 돌아온 직후에는 위젯이 준비되기 전이라 눌러도 모달만 닫힌다.
+        confirmText={isLoading ? "결제 정보 준비 중..." : "결제 다시 시도하기"}
+        confirmDisabled={isLoading}
         onConfirm={handleRetryPayment}
       />
     </div>

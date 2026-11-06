@@ -4,7 +4,12 @@ import { IconButton } from "../../../shared/ui/IconButton/IconButton";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { submitRelationship, type RelationshipType } from "../api/relationApi";
+import {
+  getSessionStatus,
+  hasPassedStep,
+} from "../../payment/api/paymentApi";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface RelationOption {
   id: string;
@@ -99,10 +104,15 @@ export function RelationStep({ sessionId, onNext }: RelationStepProps) {
       );
     } catch (err) {
       console.error("관계 선택 제출 실패:", err);
-      hasSubmittedRef.current = false;
-      setIsSubmitting(false);
-      setSubmitError("관계 선택 저장에 실패했습니다. 다시 시도해주세요.");
-      return;
+
+      // 응답만 끊기고 서버에는 저장된 경우 다시 제출해도 실패하므로, 단계를 확인해 그대로 진행한다.
+      const latest = await getSessionStatus(sessionId).catch(() => null);
+      if (!latest || !hasPassedStep(latest.currentStep, "RELATIONSHIP")) {
+        hasSubmittedRef.current = false;
+        setIsSubmitting(false);
+        setSubmitError("관계 선택 저장에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
     }
 
     onNext?.({
@@ -121,6 +131,7 @@ export function RelationStep({ sessionId, onNext }: RelationStepProps) {
   };
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "relation" });
     // 만료 시 가장 최근에 선택한 관계를 자동으로 선택하고, 선택한 적이 없으면 "관계 설정 안 하기"로 처리한다.
     proceed(selectedId ?? "none");
   };

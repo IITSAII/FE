@@ -2,10 +2,16 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { routeTree } from "../routeTree.gen";
+import { initAnalytics, trackPageView } from "../shared/lib/analytics";
 import "./App.css";
 
 const router = createRouter({
   routeTree,
+});
+
+initAnalytics();
+router.subscribe("onResolved", ({ toLocation }) => {
+  trackPageView(toLocation.pathname);
 });
 
 declare module "@tanstack/react-router" {

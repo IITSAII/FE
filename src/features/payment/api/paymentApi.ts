@@ -17,6 +17,22 @@ export type SessionStatus =
   | "DONE"
   | "EXPIRED";
 
+const SESSION_STEP_ORDER: SessionStep[] = [
+  "QUANTITY",
+  "PAYMENT",
+  "RELATIONSHIP",
+  "CAPTURE",
+  "SELECT",
+  "FRAME",
+  "PRINT",
+  "DONE",
+];
+
+/** 세션이 `step` 단계를 이미 지났는지 판단한다. 응답이 끊겨도 서버 처리가 끝났는지 알 수 있다. */
+export function hasPassedStep(current: SessionStep, step: SessionStep): boolean {
+  return SESSION_STEP_ORDER.indexOf(current) > SESSION_STEP_ORDER.indexOf(step);
+}
+
 /** `POST /api/sessions` 응답 (`SessionCreateResponse`). */
 export interface SessionCreateResponse {
   /** 세션 공개 식별자. 토스페이먼츠 orderId로도 그대로 사용한다. */

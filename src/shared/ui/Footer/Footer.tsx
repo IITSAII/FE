@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { isPostPaymentFlow } from "../../lib/flow";
 
 const Footer = () => {
   const location = useLocation();
@@ -7,6 +8,11 @@ const Footer = () => {
 
   // 환불 정책 페이지는 자체 상단바만 있는 단독 화면이므로 전역 Footer를 노출하지 않는다.
   if (isRefundPolicyRoute) return null;
+
+  // 결제 후에는 화면을 벗어나면 촬영 사진을 잃으므로 이동 링크를 보여주지 않는다.
+  const isInPaidFlow =
+    location.pathname === "/" &&
+    isPostPaymentFlow((location.search as { step?: unknown }).step);
 
   return (
     <footer className="w-full bg-green-500">
@@ -34,10 +40,17 @@ const Footer = () => {
               <span>세종특별자치시 조치원읍 섭골길 97</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Link to="/refund-policy" className="text-iphone-body-1-semibold">
-                환불 정책
-              </Link>
-              <span>|</span>
+              {!isInPaidFlow && (
+                <>
+                  <Link
+                    to="/refund-policy"
+                    className="text-iphone-body-1-semibold"
+                  >
+                    환불 정책
+                  </Link>
+                  <span>|</span>
+                </>
+              )}
               <span>고객 센터 : 010-6682-1961, 010-2289-1051</span>
             </div>
           </div>

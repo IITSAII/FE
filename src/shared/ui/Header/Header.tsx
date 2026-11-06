@@ -1,4 +1,5 @@
 import { Link, useLocation, useParams } from "@tanstack/react-router";
+import { isPostPaymentFlow } from "../../lib/flow";
 import Logo from "../../assets/icons/Logo/Logo.svg?react";
 import ImageIcon from "../../assets/icons/ImageIcon.svg?react";
 
@@ -17,6 +18,12 @@ const Header = () => {
   // galleryToken이 있는 `/intro/{galleryToken}`(QR 진입)에서만 사진 아이콘 버튼을 노출한다.
   const showGalleryButton = Boolean(galleryToken);
 
+  // 결제 후에는 로고로 주소를 바꾸면 복구 경로를 잃으므로 링크 없이 로고만 보여준다.
+  const isInPaidFlow =
+    location.pathname === "/" &&
+    isPostPaymentFlow((location.search as { step?: unknown }).step);
+  const logo = <Logo className="w-[59.21px] h-6 text-green-500" />;
+
   return (
     <header
       className={`fixed top-0 right-0 left-0 z-10 ${
@@ -30,9 +37,13 @@ const Header = () => {
             : "max-w-[834px] px-4.5 md:p-6"
         }`}
       >
-        <Link to="/" aria-label="첫 페이지로 돌아가기">
-          <Logo className="w-[59.21px] h-6 text-green-500" />
-        </Link>
+        {isInPaidFlow ? (
+          logo
+        ) : (
+          <Link to="/" aria-label="첫 페이지로 돌아가기">
+            {logo}
+          </Link>
+        )}
         {showGalleryButton && (
           <Link
             to="/intro/$galleryToken/download"

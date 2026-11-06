@@ -4,6 +4,7 @@ import { Button } from "../../../shared/ui/Button/Button";
 import LeftChevronIcon from "../../../shared/assets/icons/LeftChevronIcon.svg?react";
 import { isApiError } from "../../../shared/lib/apiError";
 import { getPrintInfoByGalleryToken } from "../../frame/api/printApi";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface FrameDownloadPageProps {
   galleryToken: string;
@@ -65,10 +66,10 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
             return;
           }
 
-          // 촬영 후 24시간이 지나 사진 열람 기한이 만료된 경우(410 PHOTO_VIEW_EXPIRED)를
+          // 촬영 후 24시간이 지나 사진 열람 기한이 만료된 경우(410 PRINT410_1)를
           // 그 외 실패와 구분해서 보여준다.
           const message =
-            isApiError(err) && err.code === "PHOTO_VIEW_EXPIRED"
+            isApiError(err) && err.code === "PRINT410_1"
               ? "사진 열람 기한(촬영 후 24시간)이 지나 더 이상 볼 수 없어요."
               : isApiError(err) && err.code === "PRINT400_5"
                 ? "아직 사진 인화를 준비 중이에요. 잠시 후 다시 시도해주세요."
@@ -88,6 +89,7 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
 
   const handleDownload = async () => {
     if (state.status !== "ready") return;
+    trackEvent("photo_download_click");
     setIsDownloading(true);
 
     try {
@@ -105,12 +107,21 @@ export function FrameDownloadPage({ galleryToken }: FrameDownloadPageProps) {
       anchor.download = `itsai-${galleryToken}-${Date.now()}.png`;
       document.body.appendChild(anchor);
       anchor.click();
+      trackEvent("photo_download", { result: "saved" });
       anchor.remove();
       // 브라우저가 blob을 읽기 시작할 시간을 준 뒤 해제한다(즉시 해제 시 다운로드가 끊길 수 있음).
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
       console.error("이미지 다운로드 실패, 새 탭에서 열기로 대체합니다:", err);
-      window.open(state.finalImageUrl, "_blank", "noopener,noreferrer");
+      const opened = window.open(
+        state.finalImageUrl,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      // noopener로 열면 브라우저가 null을 돌려줄 수 있어, 새 탭이 실제로 열렸는지는 알 수 없다.
+      trackEvent("photo_download", {
+        result: opened === null ? "opened_new_tab_unknown" : "opened_new_tab",
+      });
     } finally {
       setIsDownloading(false);
     }
