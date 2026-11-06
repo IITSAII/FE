@@ -104,6 +104,7 @@ export function FrameStep({
     null,
   );
   const vintagePhotosRef = useRef<Promise<string[]> | null>(null);
+  const isVintageProcessing = filter === "vintage" && !vintagePhotoUrls;
   const hasSubmittedRef = useRef(false);
 
   const { status } = useStepExpiry(sessionId);
@@ -210,7 +211,10 @@ export function FrameStep({
             프레임을 정해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            {submitError ?? "프레임 및 필터도 조정할 수 있어요."}
+            {submitError ??
+              (isVintageProcessing
+                ? "빈티지 필터를 적용하고 있어요."
+                : "프레임 및 필터도 조정할 수 있어요.")}
           </p>
         </div>
 
@@ -297,7 +301,7 @@ export function FrameStep({
           <IconButton
             variant="primary"
             onClick={handleNextStep}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isVintageProcessing}
             aria-label="다음 단계로 이동"
           >
             <RightArrowIcon className="w-8 h-8 text-green-200" />
