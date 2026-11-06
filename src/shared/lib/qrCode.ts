@@ -53,6 +53,23 @@ export function decodeGalleryToken(code: string): string | null {
   ].join("-");
 }
 
+/** 프로덕션 빌드에서 QR이 가리키는 공개 도메인. */
+const DEFAULT_PUBLIC_SITE_ORIGIN = "https://www.itsai.co.kr";
+
+/**
+ * QR에 담을 사이트 주소. 키오스크를 띄운 도메인(`window.location.origin`)을 그대로 쓰면,
+ * 임시 도메인으로 촬영한 인화물의 QR이 그 도메인이 내려가는 순간 모두 접속 불가가 된다.
+ * 그래서 프로덕션 빌드는 공개 도메인으로 고정하고, 로컬 개발에서만 현재 도메인을 쓴다.
+ * `VITE_PUBLIC_SITE_URL`이 있으면 그 값을 우선한다.
+ */
+function getGalleryOrigin(): string {
+  const configured =
+    import.meta.env.VITE_PUBLIC_SITE_URL ||
+    (import.meta.env.PROD ? DEFAULT_PUBLIC_SITE_ORIGIN : "");
+  if (configured) return configured.replace(/\/+$/, "");
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
 /**
  * QR 코드가 가리키는 갤러리(매거진/쿠폰) 페이지 URL을 만든다.
  * sessionId가 아니라 galleryToken을 사용한다 — 사진 열람은 촬영 후 24시간이면 만료되지만,
@@ -64,7 +81,7 @@ export function decodeGalleryToken(code: string): string | null {
  * RFC 3986상 대소문자를 구분하지 않으므로 대문자로 올려도 그대로 동작한다.
  */
 export function buildGalleryUrl(galleryToken: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getGalleryOrigin();
 
   // FrameStep 미리보기는 galleryToken 대신 sessionId(UUID가 아닌 문자열)를 넘긴다.
   // 압축할 수 없는 값은 기존 긴 경로로 그대로 흘려보낸다.
