@@ -26,6 +26,7 @@ import { getSessionStatus } from "../features/payment/api/paymentApi";
 import { isApiError } from "../shared/lib/apiError";
 import { formatFrameDate } from "../shared/lib/date";
 import { isPostPaymentFlow } from "../shared/lib/flow";
+import { endAnalyticsFlow, startAnalyticsFlow, trackEvent } from "../shared/lib/analytics";
 
 export type FlowStep =
   | "intro"
@@ -138,10 +139,12 @@ function SnapFlowPage() {
   >(initialStep !== "quantity" && isPostPaymentStep ? "checking" : null);
 
   const handleIntroNext = () => {
+    startAnalyticsFlow();
     setCurrentStep("quantity");
   };
 
   const handleQuantityNext = (data: QuantityStepData) => {
+    trackEvent("quantity_select", { quantity: data.personnelCount });
     // 실패 복귀는 수량 선택을 거치지 않으므로, 여기까지 남은 실패 플래그는 이번 결제와 무관하다.
     sessionStorage.removeItem("payment_failed");
     sessionStorage.setItem(QUANTITY_STORAGE_KEY, JSON.stringify(data));
@@ -174,6 +177,7 @@ function SnapFlowPage() {
   };
 
   const handleResetFlow = () => {
+    endAnalyticsFlow();
     sessionStorage.removeItem("payment_session_id");
     sessionStorage.removeItem("payment_confirmed_session_id");
     sessionStorage.removeItem(QUANTITY_STORAGE_KEY);
@@ -206,6 +210,10 @@ function SnapFlowPage() {
           serverStep === "FRAME"
         ) {
           setFlowRecovery("unrecoverable");
+          trackEvent("flow_unresolved", {
+            reason: "state_lost",
+            server_step: serverStep,
+          });
         } else {
           // PRINT/DONE은 이미 인쇄로 넘어간 세션이고, 그 전 단계는 결제가 확인되지 않은 세션이다.
           // 어느 쪽이든 이어갈 촬영이 없으므로 처음으로 돌아간다.
@@ -244,6 +252,10 @@ function SnapFlowPage() {
     setCurrentStep("select-photo");
   };
 
+  useEffect(() => {
+    if (flowRecovery === null) trackEvent("step_view", { step: currentStep });
+  }, [currentStep, flowRecovery]);
+
   if (flowRecovery === "checking") {
     return <div className="w-full min-h-screen bg-ipad-background" />;
   }
@@ -280,7 +292,13 @@ function SnapFlowPage() {
     <div className="w-full min-h-screen">
       {currentStep === "intro" && <IntroStep onNext={handleIntroNext} />}
       {currentStep === "quantity" && (
-        <QuantityStep onNext={handleQuantityNext} onExpire={handleResetFlow} />
+        <QuantityStep
+          onNext={handleQuantityNext}
+          onExpire={() => {
+            trackEvent("step_timeout", { step: "quantity" });
+            handleResetFlow();
+          }}
+        />
       )}
       {currentStep === "payment" && (
         <PaymentStep

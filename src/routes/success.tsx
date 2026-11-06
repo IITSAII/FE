@@ -7,6 +7,7 @@ import {
   confirmPayment,
   getSessionStatus,
 } from "../features/payment/api/paymentApi";
+import { trackEvent } from "../shared/lib/analytics";
 
 export const Route = createFileRoute("/success")({
   component: SuccessPage,
@@ -54,11 +55,13 @@ function SuccessPage() {
       }
 
       const proceedToRelation = () => {
+        trackEvent("payment_success");
         sessionStorage.setItem("payment_confirmed_session_id", sessionId);
         navigate({ to: "/", search: { step: "relation" } });
       };
 
-      const returnToPaymentWithFailure = () => {
+      const returnToPaymentWithFailure = (reason: string) => {
+        trackEvent("payment_fail", { reason });
         sessionStorage.setItem(PAYMENT_FAILED_FLAG_KEY, "1");
         navigate({ to: "/", search: { step: "payment" } });
       };
@@ -89,7 +92,7 @@ function SuccessPage() {
         if (result.status === "PAID") {
           proceedToRelation();
         } else {
-          returnToPaymentWithFailure();
+          returnToPaymentWithFailure("not_paid");
         }
       } catch (err) {
         // 언마운트로 인한 요청 취소는 사용자에게 노출하지 않는다.
@@ -119,10 +122,11 @@ function SuccessPage() {
           !isSessionExpired
         ) {
           setIsUnresolved(true);
+          trackEvent("flow_unresolved", { reason: "payment_unconfirmed" });
           return;
         }
 
-        returnToPaymentWithFailure();
+        returnToPaymentWithFailure(isSessionExpired ? "expired" : "rejected");
       }
     }
 

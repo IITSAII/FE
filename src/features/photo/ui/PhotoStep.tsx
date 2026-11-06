@@ -10,6 +10,7 @@ import {
   DEFAULT_COLOR_CORRECTION,
 } from "../../frame/lib/colorCorrection";
 import { PRINTED_PHOTO_ASPECT_RATIO } from "../../../shared/ui/PhotoFrame/printedPhotoSlot";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface CapturedPhoto {
   photoId: number | null;
@@ -368,7 +369,9 @@ export function PhotoStep({
         }
 
         preferredStream.getVideoTracks()[0]?.addEventListener("ended", () => {
-          if (isMounted) setCameraError(CAMERA_ERROR_MESSAGE);
+          if (!isMounted) return;
+          setCameraError(CAMERA_ERROR_MESSAGE);
+          trackEvent("camera_error", { reason: "track_ended" });
         });
 
         streamRef.current = preferredStream;
@@ -379,6 +382,7 @@ export function PhotoStep({
         if (isMounted) {
           console.warn("카메라 연결 실패 또는 권한 없음:", err);
           setCameraError(CAMERA_ERROR_MESSAGE);
+          trackEvent("camera_error", { reason: "unavailable" });
         }
       }
     }
@@ -500,6 +504,7 @@ export function PhotoStep({
       const dataUrl = capturePhoto();
       if (!dataUrl) {
         setCameraError(CAMERA_ERROR_MESSAGE);
+        trackEvent("camera_error", { reason: "capture_failed" });
         return;
       }
       setIsFlashing(true);

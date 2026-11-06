@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { trackEvent } from "../shared/lib/analytics";
 
 export const Route = createFileRoute("/fail")({
   component: FailPage,
@@ -16,6 +17,9 @@ function FailPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // 토스가 넘겨주는 실패 코드(예: PAY_PROCESS_CANCELED)만 보낸다. 주문번호는 보내지 않는다.
+    const code = new URLSearchParams(window.location.search).get("code");
+    trackEvent("payment_fail", { reason: code ?? "unknown" });
     sessionStorage.setItem(PAYMENT_FAILED_FLAG_KEY, "1");
     navigate({ to: "/", search: { step: "payment" } });
   }, [navigate]);
