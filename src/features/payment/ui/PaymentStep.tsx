@@ -13,6 +13,7 @@ import LeftArrowIcon from "../../../shared/assets/icons/LeftArrowIcon.svg?react"
 import { isApiError } from "../../../shared/lib/apiError";
 import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { createSession, getSessionStatus } from "../api/paymentApi";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 /** 결제 실패 후 재진입 시 실패 모달을 자동으로 띄우기 위한 세션 플래그. */
 const PAYMENT_FAILED_FLAG_KEY = "payment_failed";
@@ -76,6 +77,7 @@ export function PaymentStep({
   const resolvedAmount = serverAmount ?? totalPrice;
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "payment" });
     setIsExpired(true);
     setErrorMessage("시간이 초과되었습니다. 처음부터 다시 진행해주세요.");
     isClosedRef.current = true;
@@ -217,6 +219,7 @@ export function PaymentStep({
     }
 
     isOpeningPaymentRef.current = true;
+    trackEvent("payment_start", { quantity: personnelCount });
 
     try {
       const paymentWindow = await widgets.renderPaymentWindow({

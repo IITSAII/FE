@@ -12,6 +12,7 @@ import {
 import { dataUrlToBlob } from "../../../shared/lib/dataUrl";
 import { withRetry } from "../../../shared/lib/retry";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface PhotoSelectionStepData {
   selectedPhotos: CapturedPhoto[];
@@ -174,6 +175,7 @@ export function PhotoSelectionStep({
   };
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "select-photo" });
     // 만료 시 이미 선택해둔 사진은 유지하고, 남은 슬롯만 랜덤으로 채운다.
     proceed(selectedIndices);
   };

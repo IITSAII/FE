@@ -9,6 +9,7 @@ import {
   hasPassedStep,
 } from "../../payment/api/paymentApi";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 export interface RelationOption {
   id: string;
@@ -130,6 +131,7 @@ export function RelationStep({ sessionId, onNext }: RelationStepProps) {
   };
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "relation" });
     // 만료 시 가장 최근에 선택한 관계를 자동으로 선택하고, 선택한 적이 없으면 "관계 설정 안 하기"로 처리한다.
     proceed(selectedId ?? "none");
   };

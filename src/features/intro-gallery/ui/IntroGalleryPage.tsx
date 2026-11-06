@@ -15,6 +15,7 @@ import { CompanyIntroCard } from "./CompanyIntroCard";
 import { CategoryLocationToast } from "./CategoryLocationToast";
 import { COMPANY_INTRO_CONTENT } from "../lib/companyIntroContent";
 import { getCompanyIdByPartnerName } from "../lib/companyLocationContent";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 const CATEGORIES: CategoryTabItem[] = [
   { id: "majuhada", name: "마주하다" },
@@ -58,6 +59,7 @@ export function IntroGalleryPage({ galleryToken }: IntroGalleryPageProps) {
         .then((result) => {
           if (isMounted) {
             setPartner(result);
+            trackEvent("gallery_open", { partner: result.name });
             // QR 진입 시 배정된 업체의 소개 탭을 먼저 보여준다. 이후 탭 전환은 자유롭게 가능하다.
             const partnerCompanyId = getCompanyIdByPartnerName(result.name);
             if (partnerCompanyId) setSelectedCategoryId(partnerCompanyId);
@@ -103,7 +105,10 @@ export function IntroGalleryPage({ galleryToken }: IntroGalleryPageProps) {
             <CategoryTabs
               categories={CATEGORIES}
               selectedId={selectedCategoryId}
-              onSelectCategory={(id) => setSelectedCategoryId(id)}
+              onSelectCategory={(id) => {
+                setSelectedCategoryId(id);
+                trackEvent("partner_tab_view", { partner: id });
+              }}
               className="pt-3"
             />
           </div>

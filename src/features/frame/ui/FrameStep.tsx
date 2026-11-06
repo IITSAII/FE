@@ -20,6 +20,7 @@ import { applyVintageFilter } from "../lib/vintageFilter";
 import { isApiError } from "../../../shared/lib/apiError";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 /** BE `PrintJobErrorCode.FRAME_ALREADY_SELECTED`의 코드. */
 const FRAME_ALREADY_SELECTED_CODE = "PRINT400_2";
@@ -168,6 +169,7 @@ export function FrameStep({
       }
     }
 
+    trackEvent("frame_select", { frame: frameId, filter });
     onNext?.({
       frameId,
       theme: selectedThemeId,
@@ -182,6 +184,7 @@ export function FrameStep({
   };
 
   const handleExpire = () => {
+    trackEvent("step_timeout", { step: "frame" });
     // 만료 시 마지막으로 선택해둔(또는 기본값인) frameId/theme/filter 그대로 진행한다.
     proceed();
   };

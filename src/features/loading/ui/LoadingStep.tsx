@@ -24,6 +24,7 @@ import banjjakBenefitImage from "../assets/banjjak.png";
 import majuhadaBenefitImage from "../assets/majuhada.png";
 import overnookBenefitImage from "../assets/overnook.png";
 import pichimothanBenefitImage from "../assets/pichimothan.png";
+import { trackEvent } from "../../../shared/lib/analytics";
 
 /** 배정된 제휴업체명으로 로딩 화면에 노출할 안내 이미지를 찾는다. */
 function getPartnerBenefitImage(partnerName: string): string {
@@ -228,6 +229,7 @@ export function LoadingStep({
         }
         const blob = await exportFrameImage(captureNodeRef.current);
         await withRetry(() => uploadFinalImage(sessionId, blob));
+        trackEvent("print_upload_success");
         setIsUploadDone(true);
         setUploadError(null);
       } catch (err) {
@@ -250,6 +252,7 @@ export function LoadingStep({
           message: err instanceof Error ? err.message : String(err),
           sessionId,
         });
+        trackEvent("print_upload_fail");
         setUploadError("사진 인화 준비 중 오류가 발생했습니다.");
       }
     }
