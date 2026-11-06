@@ -346,9 +346,7 @@ function SnapFlowPage() {
       {currentStep === "loading" && sessionId && (
         <LoadingStep
           sessionId={sessionId}
-          photos={selectedPhotoData?.selectedPhotos.map(
-            (photo) => photo.dataUrl,
-          )}
+          photos={frameData?.photoUrls}
           relationshipTitle={relationData?.selectedRelationTitle}
           frameId={frameData?.frameId}
           theme={frameData?.theme}

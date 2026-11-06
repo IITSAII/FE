@@ -47,6 +47,7 @@
   /* Photo Frame Color Tokens */
   --color-frame-dark: var(--color-frame-dark);
   --color-frame-light: var(--color-frame-light);
+  --color-frame-ink: var(--color-frame-ink);
 }
 
 @layer base {
