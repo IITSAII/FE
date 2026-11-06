@@ -78,18 +78,23 @@ export interface VintageAdjustments {
 }
 
 export const DEFAULT_VINTAGE_ADJUSTMENTS: VintageAdjustments = {
-  base: "curve",
-  exposure: 0,
-  contrast: 0,
-  saturation: 0,
-  temperature: 0,
-  tint: 0,
-  highlights: 0,
-  shadows: 0,
+  base: "exclusion",
+  exposure: 54,
+  contrast: -9,
+  saturation: 3,
+  temperature: -61,
+  tint: 69,
+  highlights: 43,
+  shadows: 44,
   clarity: 0,
   sharpness: 0,
-  smoothing: 15,
-  curves: IDENTITY_CURVES,
+  smoothing: 0,
+  curves: {
+    rgb: [[0, 0], [172, 162], [255, 255]],
+    red: [[0, 0], [73, 83], [255, 255]],
+    green: [[0, 0], [146, 147], [255, 255]],
+    blue: [[0, 0], [64, 83], [231, 218], [255, 255]],
+  },
 };
 
 /** 피그마 Exclusion 레이어 색(#000024)의 0~1 값. */
