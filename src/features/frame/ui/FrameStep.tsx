@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   PhotoFrameTheme,
   PhotoFilter,
@@ -15,7 +15,8 @@ import { useCountdown } from "../../../shared/hooks/useCountdown";
 import { useStepExpiry } from "../../../shared/hooks/useStepExpiry";
 import { buildGalleryUrl } from "../../../shared/lib/qrCode";
 import { formatFrameDate } from "../../../shared/lib/date";
-import { selectFrame } from "../api/printApi";
+import { selectFrame, type FilterType } from "../api/printApi";
+import { applyVintageFilter } from "../lib/vintageFilter";
 import { isApiError } from "../../../shared/lib/apiError";
 import type { CapturedPhoto } from "../../photo/ui/PhotoStep";
 import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?react";
@@ -23,10 +24,48 @@ import RightArrowIcon from "../../../shared/assets/icons/RightArrowIcon.svg?reac
 /** BE `PrintJobErrorCode.FRAME_ALREADY_SELECTED`의 코드. */
 const FRAME_ALREADY_SELECTED_CODE = "PRINT400_2";
 
+const FILTER_OPTIONS: {
+  id: PhotoFilter;
+  label: string;
+  apiType: FilterType;
+  tile: ReactNode;
+  tileClassName: string;
+  unselectedBorderClassName: string;
+}[] = [
+  {
+    id: "default",
+    label: "기본",
+    apiType: "DEFAULT",
+    tile: <SlashIcon className="w-9 h-9 text-white" />,
+    tileClassName: "flex items-center justify-center bg-frame-dark",
+    unselectedBorderClassName: "border-transparent",
+  },
+  {
+    id: "grayscale",
+    label: "흑백",
+    apiType: "GRAYSCALE",
+    tile: <div className="absolute inset-y-0 left-0 w-1/2 bg-frame-dark" />,
+    tileClassName: "relative bg-white overflow-hidden",
+    unselectedBorderClassName: "border-gray-400",
+  },
+  {
+    id: "vintage",
+    label: "빈티지",
+    apiType: "VINTAGE",
+    tile: (
+      <div className="w-full h-full bg-linear-135 from-[#fed1b7]/47 to-[#040028]/47" />
+    ),
+    tileClassName: "bg-frame-dark overflow-hidden",
+    unselectedBorderClassName: "border-transparent",
+  },
+];
+
 export interface FrameStepData {
   frameId: FrameId;
   theme: PhotoFrameTheme;
   filter: PhotoFilter;
+  /** 최종 캡처에 쓸 사진. 빈티지면 필터가 입혀진 이미지다. */
+  photoUrls: string[];
   date: string;
 }
 
@@ -61,6 +100,11 @@ export function FrameStep({
   const [filter, setFilter] = useState<PhotoFilter>("default");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [vintagePhotoUrls, setVintagePhotoUrls] = useState<string[] | null>(
+    null,
+  );
+  const vintagePhotosRef = useRef<Promise<string[]> | null>(null);
+  const isVintageProcessing = filter === "vintage" && !vintagePhotoUrls;
   const hasSubmittedRef = useRef(false);
 
   const { status } = useStepExpiry(sessionId);
@@ -68,14 +112,46 @@ export function FrameStep({
   const qrCodeUrl = buildGalleryUrl(sessionId);
   const frameDate = useMemo(() => formatFrameDate(), []);
 
+  const loadVintagePhotos = () => {
+    vintagePhotosRef.current ??= Promise.all(
+      photoUrls.map(applyVintageFilter),
+    ).then((urls) => {
+      setVintagePhotoUrls(urls);
+      return urls;
+    });
+    return vintagePhotosRef.current;
+  };
+
+  const handleSelectFilter = (nextFilter: PhotoFilter) => {
+    setFilter(nextFilter);
+    setSubmitError(null);
+    if (nextFilter !== "vintage") return;
+
+    loadVintagePhotos().catch((err) => {
+      console.error("빈티지 필터 적용 실패:", err);
+      vintagePhotosRef.current = null;
+      setFilter("default");
+      setSubmitError("빈티지 필터를 적용하지 못했습니다. 다시 시도해주세요.");
+    });
+  };
+
   const proceed = async () => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
     setIsSubmitting(true);
 
+    let finalPhotoUrls = photoUrls;
+
     try {
+      if (filter === "vintage") {
+        finalPhotoUrls = await loadVintagePhotos();
+      }
+
       await selectFrame(sessionId, {
         frameType: frameId,
+        filterType:
+          FILTER_OPTIONS.find((option) => option.id === filter)?.apiType ??
+          "DEFAULT",
         filterBw: filter === "grayscale",
         filterBrightness: 0,
       });
@@ -96,6 +172,7 @@ export function FrameStep({
       frameId,
       theme: selectedThemeId,
       filter,
+      photoUrls: finalPhotoUrls,
       date: frameDate,
     });
   };
@@ -134,7 +211,10 @@ export function FrameStep({
             프레임을 정해주세요!
           </h2>
           <p className="text-ipad-body-1-light text-gray-600">
-            {submitError ?? "프레임 및 필터도 조정할 수 있어요."}
+            {submitError ??
+              (isVintageProcessing
+                ? "빈티지 필터를 적용하고 있어요."
+                : "프레임 및 필터도 조정할 수 있어요.")}
           </p>
         </div>
 
@@ -146,7 +226,11 @@ export function FrameStep({
               <FrameRenderer
                 frameId={frameId}
                 theme={selectedThemeId}
-                photos={photoUrls}
+                photos={
+                  filter === "vintage" && vintagePhotoUrls
+                    ? vintagePhotoUrls
+                    : photoUrls
+                }
                 relationship={relationshipTitle || "Friend"}
                 date={frameDate}
                 qrCodeUrl={qrCodeUrl}
@@ -179,55 +263,34 @@ export function FrameStep({
               </div>
             </div>
 
-            {/* 2. 필터 선택 (기본 / 흑백) */}
+            {/* 2. 필터 선택 */}
             <div className="flex flex-col gap-6">
               <h3 className="text-ipad-heading-3-medium text-black">필터</h3>
               <div className="flex items-center gap-3">
-                {/* 기본 필터 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => setFilter("default")}
-                  className={`flex flex-col items-center gap-3 cursor-pointer transition-all ${
-                    filter === "default" ? "opacity-100" : "opacity-40"
-                  }`}
-                  aria-label="기본 필터 선택"
-                >
-                  <div
-                    className={`flex items-center justify-center w-20 h-20 rounded-[4px] bg-frame-dark border-2 box-border ${
-                      filter === "default"
-                        ? "border-green-500"
-                        : "border-transparent"
+                {FILTER_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleSelectFilter(option.id)}
+                    className={`flex flex-col items-center gap-3 cursor-pointer transition-all ${
+                      filter === option.id ? "opacity-100" : "opacity-40"
                     }`}
+                    aria-label={`${option.label} 필터 선택`}
                   >
-                    <SlashIcon className="w-9 h-9 text-white" />
-                  </div>
-                  <span className="text-ipad-body-1-light text-gray-600">
-                    기본
-                  </span>
-                </button>
-
-                {/* 흑백 필터 버튼 */}
-                <button
-                  type="button"
-                  onClick={() => setFilter("grayscale")}
-                  className={`flex flex-col items-center gap-3 cursor-pointer transition-all ${
-                    filter === "grayscale" ? "opacity-100" : "opacity-40"
-                  }`}
-                  aria-label="흑백 필터 선택"
-                >
-                  <div
-                    className={`relative w-20 h-20 rounded-[4px] bg-white border-2 box-border overflow-hidden ${
-                      filter === "grayscale"
-                        ? "border-green-500"
-                        : "border-gray-400"
-                    }`}
-                  >
-                    <div className="absolute inset-y-0 left-0 w-1/2 bg-frame-dark" />
-                  </div>
-                  <span className="text-ipad-body-1-light text-gray-600">
-                    흑백
-                  </span>
-                </button>
+                    <div
+                      className={`w-20 h-20 rounded-[4px] border-2 box-border ${option.tileClassName} ${
+                        filter === option.id
+                          ? "border-green-500"
+                          : option.unselectedBorderClassName
+                      }`}
+                    >
+                      {option.tile}
+                    </div>
+                    <span className="text-ipad-body-1-light text-gray-600">
+                      {option.label}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -238,7 +301,7 @@ export function FrameStep({
           <IconButton
             variant="primary"
             onClick={handleNextStep}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isVintageProcessing}
             aria-label="다음 단계로 이동"
           >
             <RightArrowIcon className="w-8 h-8 text-green-200" />

@@ -18,7 +18,7 @@ export type PhotoFrameTheme =
   | "overnook"
   | "banjjak";
 
-export type PhotoFilter = "default" | "grayscale";
+export type PhotoFilter = "default" | "grayscale" | "vintage";
 
 export interface PhotoFrameProps extends React.HTMLAttributes<HTMLDivElement> {
   /** 프레임 색상 묶음 (frames.ts) */
@@ -33,7 +33,7 @@ export interface PhotoFrameProps extends React.HTMLAttributes<HTMLDivElement> {
   date?: string;
   /** QR 코드 이미지 URL (선택) */
   qrCodeUrl?: string;
-  /** 사진 필터 ("default" | "grayscale") */
+  /** 사진 필터. "vintage"는 사진 픽셀에 이미 입혀져 있어 여기서 처리할 것이 없다. */
   filter?: PhotoFilter;
   /** 추가 커스텀 스타일 클래스 */
   className?: string;
